@@ -1,3 +1,4 @@
+import 'package:coffee_vending/Screens/adminLogin/tab/AdminScreenLoginT.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -263,7 +264,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -299,14 +300,31 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               ),
             ],
           ),
-          Text(
-            _formatTime(_currentTime),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.brown.shade900,
-            ),
-          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(height: 10),
+              Text(
+                _formatTime(_currentTime),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.brown.shade900,
+                ),
+              ),
+              IconButton(
+                splashRadius: 1,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  adminScreenLogin(),
+                      ),
+                    );
+                  }, icon: Icon(Icons.admin_panel_settings,color: Colors.brown.shade900,))
+            ],
+          )
+          
         ],
       ),
     );
@@ -533,7 +551,6 @@ class ItemData {
   ItemData(this.name, this.id, this.color, {this.textColor, required this.imagePath});
 }
 
-// Custom painter for wave effect
 class WavePainter extends CustomPainter {
   final double progress;
 
