@@ -1,3 +1,4 @@
+import 'package:coffee_vending/Screens/AdminPanel/tab/AdminPanelT.dart';
 import 'package:coffee_vending/allImports.dart';
 
 import 'package:flutter/material.dart';
@@ -23,19 +24,25 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
   }
 
   void _handleSubmit() {
-    if (_formKey.currentState!.validate()) {
-      // Handle login logic here
-      String username = _usernameController.text;
-      String password = _passwordController.text;
-
-      // TODO: Implement your authentication logic
-      print('Username: $username');
-      print('Password: $password');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logging in...')),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>  Adminpanel(),
+      ),
+    );
+    // if (_formKey.currentState!.validate()) {
+    //   // Handle login logic here
+    //   String username = _usernameController.text;
+    //   String password = _passwordController.text;
+    //
+    //   // TODO: Implement your authentication logic
+    //   print('Username: $username');
+    //   print('Password: $password');
+    //
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Logging in...')),
+    //   );
+    // }
   }
 
   @override
