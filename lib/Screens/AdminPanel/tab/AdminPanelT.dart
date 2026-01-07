@@ -37,10 +37,42 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   int _teaPump = 5;
   int _coffeePump = 5;
 
+
+  final Map<String, int> _drinkCounts = {
+    'Strong Coffee': 0,
+    'Lite Coffee': 0,
+    'Black Coffee': 0,
+    'Strong Tea': 0,
+    'Lite Tea': 0,
+    'Black Tea': 0,
+    'Dip Tea': 0,
+    'Hot Milk': 0,
+    'Hot Water': 0,
+  };
+
+  final Map<String, bool> _showCountControls = {
+    'Strong Coffee': false,
+    'Lite Coffee': false,
+    'Black Coffee': false,
+    'Strong Tea': false,
+    'Lite Tea': false,
+    'Black Tea': false,
+    'Dip Tea': false,
+    'Hot Milk': false,
+    'Hot Water': false,
+  };
+
+  String _companyName = '';
+  int _configDelay = 0;
+
+  int _teaCleanDelay = 0;
+  int _coffeeCleanDelay = 0;
+  int _milkCleanDelay = 0;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -50,7 +82,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   }
 
   void _saveSettings() {
-    // Implement your save logic here
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Settings saved successfully!'),
@@ -100,11 +131,15 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           isScrollable: false,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white60,
+          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
           tabs: const [
-            Tab(icon: Icon(Icons.timer), text: 'Delays'),
-            Tab(icon: Icon(Icons.thermostat), text: 'Brewing'),
-            Tab(icon: Icon(Icons.cleaning_services), text: 'Cleaning'),
-            Tab(icon: Icon(Icons.replay), text: 'Reverse'),
+            Tab(icon: Icon(Icons.timer, size: 20), text: 'Delays'),
+            Tab(icon: Icon(Icons.thermostat, size: 20), text: 'Brewing'),
+            Tab(icon: Icon(Icons.cleaning_services, size: 20), text: 'Cleaning'),
+            Tab(icon: Icon(Icons.replay, size: 20), text: 'Reverse'),
+            Tab(icon: Icon(Icons.format_list_numbered, size: 20), text: 'Counts'),
+            Tab(icon: Icon(Icons.settings, size: 20), text: 'Config'),
           ],
         ),
       ),
@@ -115,6 +150,8 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           _buildBrewingSettings(),
           _buildCleaningSettings(),
           _buildReverseSettings(),
+          _buildCountsSettings(),
+          _buildConfigSettings(),
         ],
       ),
     );
@@ -129,31 +166,31 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           _buildInfoCard('Configure timing delays and on-time duration for each beverage component.'),
           const SizedBox(height: 16),
           _buildDelayCard('Strong Coffee', 'strongCoffee', [
-            {'key': 'cpDelay', 'label': 'CP - Coffee Pump Delay', 'onTimeKey': 'cpOnTime'},
+            {'key': 'cpDelay', 'label': 'Coffee Pump Delay', 'onTimeKey': 'cpOnTime'},
             {'key': 'milkDelay', 'label': 'Milk Pump Delay', 'onTimeKey': 'milkOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Lite Coffee', 'liteCoffee', [
-            {'key': 'cpDelay', 'label': 'CP - Coffee Pump Delay', 'onTimeKey': 'cpOnTime'},
+            {'key': 'cpDelay', 'label': 'Coffee Pump Delay', 'onTimeKey': 'cpOnTime'},
             {'key': 'milkDelay', 'label': 'Milk Pump Delay', 'onTimeKey': 'milkOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Black Coffee', 'blackCoffee', [
-            {'key': 'ctpDelay', 'label': 'CTP - Coffee Pump Delay', 'onTimeKey': 'ctpOnTime'},
+            {'key': 'ctpDelay', 'label': 'Coffee Pump Delay', 'onTimeKey': 'ctpOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Strong Tea', 'strongTea', [
-            {'key': 'ttpDelay', 'label': 'TTP - Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
+            {'key': 'ttpDelay', 'label': 'Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
             {'key': 'milkDelay', 'label': 'Milk Pump Delay', 'onTimeKey': 'milkOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Lite Tea', 'liteTea', [
-            {'key': 'ttpDelay', 'label': 'TTP - Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
+            {'key': 'ttpDelay', 'label': 'Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
             {'key': 'milkDelay', 'label': 'Milk Pump Delay', 'onTimeKey': 'milkOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Black Tea', 'blackTea', [
-            {'key': 'ttpDelay', 'label': 'TTP - Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
+            {'key': 'ttpDelay', 'label': 'Tea Pump Delay', 'onTimeKey': 'ttpOnTime'},
             {'key': 'waterDelay', 'label': 'Hot Water Pump Delay', 'onTimeKey': 'waterOnTime'},
           ]),
           _buildDelayCard('Dip Tea', 'dipTea', [
@@ -393,7 +430,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildInfoCard('Configure automatic cleaning duration for each component.'),
+          _buildInfoCard('Configure automatic cleaning delay and duration for each component.'),
           const SizedBox(height: 16),
           Card(
             elevation: 2,
@@ -402,14 +439,17 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _buildCleaningItem('Tea Cleaning Duration', _teaClean, Icons.emoji_food_beverage, Colors.green,
-                          (value) => setState(() => _teaClean = value)),
+                  _buildCleaningItem('Tea Cleaning', _teaClean, _teaCleanDelay, Icons.emoji_food_beverage, Colors.green,
+                          (value) => setState(() => _teaClean = value),
+                          (delay) => setState(() => _teaCleanDelay = delay)),
                   const Divider(height: 32),
-                  _buildCleaningItem('Coffee Cleaning Duration', _coffeeClean, Icons.coffee, Colors.brown,
-                          (value) => setState(() => _coffeeClean = value)),
+                  _buildCleaningItem('Coffee Cleaning', _coffeeClean, _coffeeCleanDelay, Icons.coffee, Colors.brown,
+                          (value) => setState(() => _coffeeClean = value),
+                          (delay) => setState(() => _coffeeCleanDelay = delay)),
                   const Divider(height: 32),
-                  _buildCleaningItem('Milk Cleaning Duration', _milkClean, Icons.water_drop, Colors.blue,
-                          (value) => setState(() => _milkClean = value)),
+                  _buildCleaningItem('Milk Cleaning', _milkClean, _milkCleanDelay, Icons.water_drop, Colors.blue,
+                          (value) => setState(() => _milkClean = value),
+                          (delay) => setState(() => _milkCleanDelay = delay)),
                 ],
               ),
             ),
@@ -419,41 +459,86 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCleaningItem(String label, int value, IconData icon, Color color, Function(int) onChanged) {
-    return Row(
+  Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(
+        Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () => value > 0 ? onChanged(value - 1) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: color,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('$value sec', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-                  ),
-                  IconButton(
-                    onPressed: () => onChanged(value + 1),
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: color,
+                  Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: color,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                      ),
+                      IconButton(
+                        onPressed: () => onDelayChanged(delayValue + 1),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: color,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Duration', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => value > 0 ? onChanged(value - 1) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: color,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                      ),
+                      IconButton(
+                        onPressed: () => onChanged(value + 1),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: color,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -482,6 +567,211 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                   const Divider(height: 32),
                   _buildReverseItem('Coffee Pump Reverse', _coffeePump, Icons.coffee, Colors.brown,
                           (value) => setState(() => _coffeePump = value)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountsSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildInfoCard('Track beverage consumption counts. Long press to adjust, tap reset to clear.'),
+          const SizedBox(height: 16),
+          ..._drinkCounts.keys.map((drink) => _buildCountItem(drink)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountItem(String drinkName) {
+    IconData icon;
+    Color color;
+
+    if (drinkName.contains('Coffee')) {
+      icon = Icons.coffee;
+      color = Colors.brown;
+    } else if (drinkName.contains('Tea')) {
+      icon = Icons.emoji_food_beverage;
+      color = Colors.green;
+    } else if (drinkName.contains('Milk')) {
+      icon = Icons.water_drop;
+      color = Colors.blue;
+    } else {
+      icon = Icons.local_drink;
+      color = Colors.cyan;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(drinkName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text('Total served', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                ],
+              ),
+            ),
+            if (_showCountControls[drinkName]!)
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        if (_drinkCounts[drinkName]! > 0) {
+                          _drinkCounts[drinkName] = _drinkCounts[drinkName]! - 1;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.remove_circle_outline),
+                    color: color,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            GestureDetector(
+              onLongPress: () {
+                setState(() {
+                  _showCountControls[drinkName] = !_showCountControls[drinkName]!;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_drinkCounts[drinkName]}',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+                ),
+              ),
+            ),
+            if (_showCountControls[drinkName]!)
+              Row(
+                children: [
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _drinkCounts[drinkName] = _drinkCounts[drinkName]! + 1;
+                      });
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: color,
+                  ),
+                ],
+              ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _drinkCounts[drinkName] = 0;
+                  _showCountControls[drinkName] = false;
+                });
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: const Text('RESET', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfigSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildInfoCard('Configure company information and general machine settings.'),
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.business, color: const Color(0xFF6B4423), size: 24),
+                      const SizedBox(width: 12),
+                      const Text('Company Name', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Enter company name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF6B4423), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _companyName = value;
+                      });
+                    },
+                  ),
+                  const Divider(height: 40),
+                  Row(
+                    children: [
+                      Icon(Icons.timer, color: const Color(0xFF6B4423), size: 24),
+                      const SizedBox(width: 12),
+                      const Text('ScreenSaver Timer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => _configDelay > 0 ? setState(() => _configDelay--) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: const Color(0xFF6B4423),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6B4423).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$_configDelay sec',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => _configDelay++),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: const Color(0xFF6B4423),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

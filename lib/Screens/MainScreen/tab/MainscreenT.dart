@@ -283,14 +283,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Beverage Selection',
+                'Gemini Coffee',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.brown.shade900,
                 ),
               ),
-              const SizedBox(height: 4),
+               SizedBox(height: 4),
               Text(
                 _formatDate(_currentTime),
                 style: TextStyle(
@@ -304,13 +304,44 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               SizedBox(height: 10),
-              Text(
-                _formatTime(_currentTime),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.brown.shade900,
-                ),
+              Row(
+                children: [
+                  Text(
+                    "temp :",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown.shade900,
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  Text(
+                   "70° C",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown.shade900,
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  Text(
+                    "|",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown.shade900,
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  Text(
+                    _formatTime(_currentTime),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown.shade900,
+                    ),
+                  ),
+                ],
               ),
               IconButton(
                 splashRadius: 1,
