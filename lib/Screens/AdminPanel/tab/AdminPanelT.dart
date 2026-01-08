@@ -646,8 +646,10 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               ),
             GestureDetector(
               onLongPress: () {
-                setState(() {
-                  _showCountControls[drinkName] = !_showCountControls[drinkName]!;
+                Future.delayed(const Duration(seconds: 7), () {
+                  setState(() {
+                    _showCountControls[drinkName] = !_showCountControls[drinkName]!;
+                  });
                 });
               },
               child: Container(

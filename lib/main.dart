@@ -1,8 +1,24 @@
 import 'package:coffee_vending/allImports.dart';
+import 'package:flutter/services.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
+
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.immersiveSticky,
+    overlays: [],
+  );
+
+
   runApp(const MyApp());
 }
 
@@ -16,6 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.light,
       ),
       home:  Mainscreen(),
     );
