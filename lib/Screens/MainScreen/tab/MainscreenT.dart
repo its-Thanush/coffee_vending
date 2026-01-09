@@ -83,7 +83,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 32),
             const SizedBox(width: 12),
-            const Text('Brewing Complete!'),
+            const Text('Brewing Complete! '),
           ],
         ),
         content: const Text('Your beverage is ready. Please collect it.'),
