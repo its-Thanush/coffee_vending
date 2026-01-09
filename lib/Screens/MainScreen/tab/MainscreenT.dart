@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class VendingMachineScreen extends StatefulWidget {
   const VendingMachineScreen({Key? key}) : super(key: key);
 
@@ -12,6 +14,7 @@ class VendingMachineScreen extends StatefulWidget {
 
 class _VendingMachineScreenState extends State<VendingMachineScreen> {
   String? selectedItem;
+  String _companyName = '';
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
   bool isBrewAnimating = false;
@@ -20,6 +23,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _currentTime = DateTime.now();
@@ -102,10 +106,19 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     );
   }
 
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    _companyName = prefs.getString('companyName') ?? '';
+    print("--------_companyName---------->"+_companyName);
+
+  }
+
 
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -282,8 +295,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Gemini Coffee',
+              Text(_companyName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,

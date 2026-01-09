@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class Adminpanel extends StatefulWidget {
   const Adminpanel({super.key});
@@ -9,8 +11,8 @@ class Adminpanel extends StatefulWidget {
 
 class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isLoading = true;
 
-  // Delay Settings
   final Map<String, Map<String, int>> _delaySettings = {
     'strongCoffee': {'cpDelay': 0, 'cpOnTime': 0, 'milkDelay': 0, 'milkOnTime': 0, 'waterDelay': 0, 'waterOnTime': 0},
     'liteCoffee': {'cpDelay': 0, 'cpOnTime': 0, 'milkDelay': 0, 'milkOnTime': 0, 'waterDelay': 0, 'waterOnTime': 0},
@@ -23,20 +25,16 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     'hotWater': {'waterValveDelay': 0, 'waterValveOnTime': 0},
   };
 
-  // Brewing Settings
   double _coffeeTemp = 85.0;
   double _teaTemp = 90.0;
 
-  // Cleaning Settings
   int _teaClean = 10;
   int _coffeeClean = 10;
   int _milkClean = 15;
 
-  // Reverse Timing
   int _milkPump = 5;
   int _teaPump = 5;
   int _coffeePump = 5;
-
 
   final Map<String, int> _drinkCounts = {
     'Strong Coffee': 0,
@@ -73,6 +71,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
+    _loadSettings();
   }
 
   @override
@@ -81,18 +80,217 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _saveSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Settings saved successfully!'),
-        backgroundColor: Color(0xFF6B4423),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _delaySettings['strongCoffee'] = {
+        'cpDelay': prefs.getInt('strongCoffee_cpDelay') ?? 0,
+        'cpOnTime': prefs.getInt('strongCoffee_cpOnTime') ?? 0,
+        'milkDelay': prefs.getInt('strongCoffee_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('strongCoffee_milkOnTime') ?? 0,
+        'waterDelay': prefs.getInt('strongCoffee_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('strongCoffee_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['liteCoffee'] = {
+        'cpDelay': prefs.getInt('liteCoffee_cpDelay') ?? 0,
+        'cpOnTime': prefs.getInt('liteCoffee_cpOnTime') ?? 0,
+        'milkDelay': prefs.getInt('liteCoffee_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('liteCoffee_milkOnTime') ?? 0,
+        'waterDelay': prefs.getInt('liteCoffee_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('liteCoffee_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['blackCoffee'] = {
+        'ctpDelay': prefs.getInt('blackCoffee_ctpDelay') ?? 0,
+        'ctpOnTime': prefs.getInt('blackCoffee_ctpOnTime') ?? 0,
+        'waterDelay': prefs.getInt('blackCoffee_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('blackCoffee_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['strongTea'] = {
+        'ttpDelay': prefs.getInt('strongTea_ttpDelay') ?? 0,
+        'ttpOnTime': prefs.getInt('strongTea_ttpOnTime') ?? 0,
+        'milkDelay': prefs.getInt('strongTea_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('strongTea_milkOnTime') ?? 0,
+        'waterDelay': prefs.getInt('strongTea_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('strongTea_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['liteTea'] = {
+        'ttpDelay': prefs.getInt('liteTea_ttpDelay') ?? 0,
+        'ttpOnTime': prefs.getInt('liteTea_ttpOnTime') ?? 0,
+        'milkDelay': prefs.getInt('liteTea_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('liteTea_milkOnTime') ?? 0,
+        'waterDelay': prefs.getInt('liteTea_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('liteTea_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['blackTea'] = {
+        'ttpDelay': prefs.getInt('blackTea_ttpDelay') ?? 0,
+        'ttpOnTime': prefs.getInt('blackTea_ttpOnTime') ?? 0,
+        'waterDelay': prefs.getInt('blackTea_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('blackTea_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['dipTea'] = {
+        'waterDelay': prefs.getInt('dipTea_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('dipTea_waterOnTime') ?? 0,
+        'milkDelay': prefs.getInt('dipTea_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('dipTea_milkOnTime') ?? 0,
+      };
+
+      _delaySettings['hotMilk'] = {
+        'milkDelay': prefs.getInt('hotMilk_milkDelay') ?? 0,
+        'milkOnTime': prefs.getInt('hotMilk_milkOnTime') ?? 0,
+        'waterDelay': prefs.getInt('hotMilk_waterDelay') ?? 0,
+        'waterOnTime': prefs.getInt('hotMilk_waterOnTime') ?? 0,
+      };
+
+      _delaySettings['hotWater'] = {
+        'waterValveDelay': prefs.getInt('hotWater_waterValveDelay') ?? 0,
+        'waterValveOnTime': prefs.getInt('hotWater_waterValveOnTime') ?? 0,
+      };
+
+      _coffeeTemp = prefs.getDouble('coffeeTemp') ?? 85.0;
+      _teaTemp = prefs.getDouble('teaTemp') ?? 90.0;
+
+      _teaClean = prefs.getInt('teaClean') ?? 10;
+      _coffeeClean = prefs.getInt('coffeeClean') ?? 10;
+      _milkClean = prefs.getInt('milkClean') ?? 15;
+
+      _teaCleanDelay = prefs.getInt('teaCleanDelay') ?? 0;
+      _coffeeCleanDelay = prefs.getInt('coffeeCleanDelay') ?? 0;
+      _milkCleanDelay = prefs.getInt('milkCleanDelay') ?? 0;
+
+      _milkPump = prefs.getInt('milkPump') ?? 5;
+      _teaPump = prefs.getInt('teaPump') ?? 5;
+      _coffeePump = prefs.getInt('coffeePump') ?? 5;
+
+      _drinkCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
+      _drinkCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
+      _drinkCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
+      _drinkCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
+      _drinkCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
+      _drinkCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
+      _drinkCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
+      _drinkCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
+      _drinkCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
+
+      _companyName = prefs.getString('companyName') ?? '';
+      _configDelay = prefs.getInt('configDelay') ?? 0;
+
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setInt('strongCoffee_cpDelay', _delaySettings['strongCoffee']!['cpDelay']!);
+    await prefs.setInt('strongCoffee_cpOnTime', _delaySettings['strongCoffee']!['cpOnTime']!);
+    await prefs.setInt('strongCoffee_milkDelay', _delaySettings['strongCoffee']!['milkDelay']!);
+    await prefs.setInt('strongCoffee_milkOnTime', _delaySettings['strongCoffee']!['milkOnTime']!);
+    await prefs.setInt('strongCoffee_waterDelay', _delaySettings['strongCoffee']!['waterDelay']!);
+    await prefs.setInt('strongCoffee_waterOnTime', _delaySettings['strongCoffee']!['waterOnTime']!);
+
+    await prefs.setInt('liteCoffee_cpDelay', _delaySettings['liteCoffee']!['cpDelay']!);
+    await prefs.setInt('liteCoffee_cpOnTime', _delaySettings['liteCoffee']!['cpOnTime']!);
+    await prefs.setInt('liteCoffee_milkDelay', _delaySettings['liteCoffee']!['milkDelay']!);
+    await prefs.setInt('liteCoffee_milkOnTime', _delaySettings['liteCoffee']!['milkOnTime']!);
+    await prefs.setInt('liteCoffee_waterDelay', _delaySettings['liteCoffee']!['waterDelay']!);
+    await prefs.setInt('liteCoffee_waterOnTime', _delaySettings['liteCoffee']!['waterOnTime']!);
+
+    await prefs.setInt('blackCoffee_ctpDelay', _delaySettings['blackCoffee']!['ctpDelay']!);
+    await prefs.setInt('blackCoffee_ctpOnTime', _delaySettings['blackCoffee']!['ctpOnTime']!);
+    await prefs.setInt('blackCoffee_waterDelay', _delaySettings['blackCoffee']!['waterDelay']!);
+    await prefs.setInt('blackCoffee_waterOnTime', _delaySettings['blackCoffee']!['waterOnTime']!);
+
+    await prefs.setInt('strongTea_ttpDelay', _delaySettings['strongTea']!['ttpDelay']!);
+    await prefs.setInt('strongTea_ttpOnTime', _delaySettings['strongTea']!['ttpOnTime']!);
+    await prefs.setInt('strongTea_milkDelay', _delaySettings['strongTea']!['milkDelay']!);
+    await prefs.setInt('strongTea_milkOnTime', _delaySettings['strongTea']!['milkOnTime']!);
+    await prefs.setInt('strongTea_waterDelay', _delaySettings['strongTea']!['waterDelay']!);
+    await prefs.setInt('strongTea_waterOnTime', _delaySettings['strongTea']!['waterOnTime']!);
+
+    await prefs.setInt('liteTea_ttpDelay', _delaySettings['liteTea']!['ttpDelay']!);
+    await prefs.setInt('liteTea_ttpOnTime', _delaySettings['liteTea']!['ttpOnTime']!);
+    await prefs.setInt('liteTea_milkDelay', _delaySettings['liteTea']!['milkDelay']!);
+    await prefs.setInt('liteTea_milkOnTime', _delaySettings['liteTea']!['milkOnTime']!);
+    await prefs.setInt('liteTea_waterDelay', _delaySettings['liteTea']!['waterDelay']!);
+    await prefs.setInt('liteTea_waterOnTime', _delaySettings['liteTea']!['waterOnTime']!);
+
+    await prefs.setInt('blackTea_ttpDelay', _delaySettings['blackTea']!['ttpDelay']!);
+    await prefs.setInt('blackTea_ttpOnTime', _delaySettings['blackTea']!['ttpOnTime']!);
+    await prefs.setInt('blackTea_waterDelay', _delaySettings['blackTea']!['waterDelay']!);
+    await prefs.setInt('blackTea_waterOnTime', _delaySettings['blackTea']!['waterOnTime']!);
+
+    await prefs.setInt('dipTea_waterDelay', _delaySettings['dipTea']!['waterDelay']!);
+    await prefs.setInt('dipTea_waterOnTime', _delaySettings['dipTea']!['waterOnTime']!);
+    await prefs.setInt('dipTea_milkDelay', _delaySettings['dipTea']!['milkDelay']!);
+    await prefs.setInt('dipTea_milkOnTime', _delaySettings['dipTea']!['milkOnTime']!);
+
+    await prefs.setInt('hotMilk_milkDelay', _delaySettings['hotMilk']!['milkDelay']!);
+    await prefs.setInt('hotMilk_milkOnTime', _delaySettings['hotMilk']!['milkOnTime']!);
+    await prefs.setInt('hotMilk_waterDelay', _delaySettings['hotMilk']!['waterDelay']!);
+    await prefs.setInt('hotMilk_waterOnTime', _delaySettings['hotMilk']!['waterOnTime']!);
+
+    await prefs.setInt('hotWater_waterValveDelay', _delaySettings['hotWater']!['waterValveDelay']!);
+    await prefs.setInt('hotWater_waterValveOnTime', _delaySettings['hotWater']!['waterValveOnTime']!);
+
+    await prefs.setDouble('coffeeTemp', _coffeeTemp);
+    await prefs.setDouble('teaTemp', _teaTemp);
+
+    await prefs.setInt('teaClean', _teaClean);
+    await prefs.setInt('coffeeClean', _coffeeClean);
+    await prefs.setInt('milkClean', _milkClean);
+
+    await prefs.setInt('teaCleanDelay', _teaCleanDelay);
+    await prefs.setInt('coffeeCleanDelay', _coffeeCleanDelay);
+    await prefs.setInt('milkCleanDelay', _milkCleanDelay);
+
+    await prefs.setInt('milkPump', _milkPump);
+    await prefs.setInt('teaPump', _teaPump);
+    await prefs.setInt('coffeePump', _coffeePump);
+
+    await prefs.setInt('count_strongCoffee', _drinkCounts['Strong Coffee']!);
+    await prefs.setInt('count_liteCoffee', _drinkCounts['Lite Coffee']!);
+    await prefs.setInt('count_blackCoffee', _drinkCounts['Black Coffee']!);
+    await prefs.setInt('count_strongTea', _drinkCounts['Strong Tea']!);
+    await prefs.setInt('count_liteTea', _drinkCounts['Lite Tea']!);
+    await prefs.setInt('count_blackTea', _drinkCounts['Black Tea']!);
+    await prefs.setInt('count_dipTea', _drinkCounts['Dip Tea']!);
+    await prefs.setInt('count_hotMilk', _drinkCounts['Hot Milk']!);
+    await prefs.setInt('count_hotWater', _drinkCounts['Hot Water']!);
+
+    await prefs.setString('companyName', _companyName);
+    await prefs.setInt('configDelay', _configDelay);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Settings saved successfully!'),
+          backgroundColor: Color(0xFF6B4423),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF6B4423),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -157,7 +355,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  // Delay Settings Tab
   Widget _buildDelaySettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -247,7 +444,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                   });
                 },
               ),
-            )).toList(),
+            )),
           ],
         ),
       ),
@@ -265,7 +462,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
         const SizedBox(height: 8),
         Row(
           children: [
-            // Delay controls
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,7 +497,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               ),
             ),
             const SizedBox(width: 8),
-            // On Time controls
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +537,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  // Brewing Settings Tab
   Widget _buildBrewingSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -424,7 +618,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  // Cleaning Settings Tab
   Widget _buildCleaningSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -544,7 +737,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  // Reverse Timing Tab
   Widget _buildReverseSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -723,6 +915,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                   ),
                   const SizedBox(height: 16),
                   TextField(
+                    controller: TextEditingController(text: _companyName)..selection = TextSelection.fromPosition(TextPosition(offset: _companyName.length)),
                     decoration: InputDecoration(
                       hintText: 'Enter company name',
                       border: OutlineInputBorder(
@@ -823,7 +1016,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  // Helper Widgets
   Widget _buildInfoCard(String text) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -844,40 +1036,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNumberInput(String label, int value, Function(int) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey[700]),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            suffixText: 'sec',
-            suffixStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6B4423), width: 2),
-            ),
-          ),
-          controller: TextEditingController(text: value.toString()),
-          onChanged: (val) => onChanged(int.tryParse(val) ?? 0),
-        ),
-      ],
     );
   }
 }
