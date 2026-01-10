@@ -95,118 +95,454 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Future<void> _sendBrewCommand() async {
     if (bloc.selectedItem == null) return;
 
-    String drinkName = '';
-    String drinkCode = '';
+    // if (!bloc.isNodeMCUOnline) return;
 
-    switch (bloc.selectedItem) {
-      case 'c1':
-        drinkName = 'Strong Coffee';
-        drinkCode = 'SC';
-        break;
-      case 'c2':
-        drinkName = 'Lite Coffee';
-        drinkCode = 'LC';
-        break;
-      case 'c3':
-        drinkName = 'Black Coffee';
-        drinkCode = 'BC';
-        break;
-      case 'c4':
-        drinkName = 'Espresso';
-        drinkCode = 'EP';
-        break;
-      case 't1':
-        drinkName = 'Strong Tea';
-        drinkCode = 'ST';
-        break;
-      case 't2':
-        drinkName = 'Lite Tea';
-        drinkCode = 'LT';
-        break;
-      case 't3':
-        drinkName = 'Black Tea';
-        drinkCode = 'BT';
-        break;
-      case 'e1':
-        drinkName = 'Hot Milk';
-        drinkCode = 'HM';
-        break;
-      case 'e2':
-        drinkName = 'Hot Water';
-        drinkCode = 'HW';
-        break;
-    }
-
-    final Map<String, dynamic> jsonData = {
-      "drink": drinkName,
-      "drink_code": drinkCode,
-      "pin": 2,
-      "value": 1
-    };
-
-    final String jsonString = jsonEncode(jsonData);
-    print("Sending JSON → $jsonString");
-    if (bloc.isNodeMCUOnline) {
-      await bloc.serialService.sendJsonData(jsonData);
-      print("Brew command sent: $drinkName ($drinkCode)");
+    if (bloc.selectedItem == 'c1') {
+      await _executeStrongCoffeeSequence();
+    }else if (bloc.selectedItem == 'c2') {
+      await _executeLiteCoffeeSequence();
+    }else if (bloc.selectedItem == 'c3') {
+      await _executeBlackCoffeeSequence();
+    }else if (bloc.selectedItem == 't1') {
+      await _executeStrongTeaSequence();
+    } else if (bloc.selectedItem == 't2') {
+      await _executeLiteTeaSequence();
+    } else if (bloc.selectedItem == 't3') {
+      await _executeBlackTeaSequence();
+    }else if (bloc.selectedItem == 't4') {
+      await _executeDipTeaSequence();
+    } else if (bloc.selectedItem == 'e1') {
+      await _executeHotMilkSequence();
+    } else if (bloc.selectedItem == 'e2') {
+      await _executeHotWaterSequence();
     }
   }
 
-  // Future<void> _sendBrewCommand() async {
-  //   if (bloc.selectedItem == null) return;
-  //
-  //   String drinkName = '';
-  //   String drinkCode = '';
-  //
-  //   switch (bloc.selectedItem) {
-  //     case 'c1':
-  //       drinkName = 'Strong Coffee';
-  //       drinkCode = 'SC';
-  //       break;
-  //     case 'c2':
-  //       drinkName = 'Lite Coffee';
-  //       drinkCode = 'LC';
-  //       break;
-  //     case 'c3':
-  //       drinkName = 'Black Coffee';
-  //       drinkCode = 'BC';
-  //       break;
-  //     case 'c4':
-  //       drinkName = 'Espresso';
-  //       drinkCode = 'EP';
-  //       break;
-  //     case 't1':
-  //       drinkName = 'Strong Tea';
-  //       drinkCode = 'ST';
-  //       break;
-  //     case 't2':
-  //       drinkName = 'Lite Tea';
-  //       drinkCode = 'LT';
-  //       break;
-  //     case 't3':
-  //       drinkName = 'Black Tea';
-  //       drinkCode = 'BT';
-  //       break;
-  //     case 'e1':
-  //       drinkName = 'Hot Milk';
-  //       drinkCode = 'HM';
-  //       break;
-  //     case 'e2':
-  //       drinkName = 'Hot Water';
-  //       drinkCode = 'HW';
-  //       break;
-  //   }
-  //
-  //   if (bloc.isNodeMCUOnline) {
-  //     await bloc.serialService.sendJsonData({
-  //       "drink": drinkName,
-  //       "drink_code": drinkCode,
-  //       "pin": 2,
-  //       "value": 1
-  //     });
-  //     print('Brew command sent: $drinkName ($drinkCode)');
-  //   }
-  // }
+  Future<void> _executeStrongCoffeeSequence() async {
+    final settings = bloc.delaySettings['strongCoffee'];
+    if (settings == null) return;
+
+    final cpDelay = settings['cpDelay'] ?? 0;
+    final cpOnTime = settings['cpOnTime'] ?? 0;
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Strong Coffee Sequence");
+
+    print("Waiting cpDelay: $cpDelay seconds");
+    await Future.delayed(Duration(seconds: cpDelay));
+    print("cpDelay complete");
+
+    print("Sending Coffee Pump ON: {CP_FWD: 1023, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+
+    print("Waiting cpOnTime: $cpOnTime seconds");
+    await Future.delayed(Duration(seconds: cpOnTime));
+    print("cpOnTime complete");
+
+    print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Strong Coffee Sequence Complete");
+  }
+
+  Future<void> _executeLiteCoffeeSequence() async {
+    final settings = bloc.delaySettings['liteCoffee'];
+    if (settings == null) return;
+
+    final cpDelay = settings['cpDelay'] ?? 0;
+    final cpOnTime = settings['cpOnTime'] ?? 0;
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Lite Coffee Sequence");
+
+    print("Waiting cpDelay: $cpDelay seconds");
+    await Future.delayed(Duration(seconds: cpDelay));
+    print("cpDelay complete");
+
+    print("Sending Coffee Pump ON: {CP_FWD: 1023, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+
+    print("Waiting cpOnTime: $cpOnTime seconds");
+    await Future.delayed(Duration(seconds: cpOnTime));
+    print("cpOnTime complete");
+
+    print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Lite Coffee Sequence Complete");
+  }
+
+  Future<void> _executeBlackCoffeeSequence() async {
+    final settings = bloc.delaySettings['blackCoffee'];
+    if (settings == null) return;
+
+    final ctpDelay = settings['ctpDelay'] ?? 0;
+    final ctpOnTime = settings['ctpOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Black Coffee Sequence");
+
+    print("Waiting ctpDelay: $ctpDelay seconds");
+    await Future.delayed(Duration(seconds: ctpDelay));
+    print("ctpDelay complete");
+
+    print("Sending Coffee Tea Pump ON: {CP_FWD: 1023, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+
+    print("Waiting ctpOnTime: $ctpOnTime seconds");
+    await Future.delayed(Duration(seconds: ctpOnTime));
+    print("ctpOnTime complete");
+
+    print("Sending Coffee Tea Pump OFF: {CP_FWD: 0, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Black Coffee Sequence Complete");
+  }
+
+  Future<void> _executeStrongTeaSequence() async {
+    final settings = bloc.delaySettings['strongTea'];
+    if (settings == null) return;
+
+    final ttpDelay = settings['ttpDelay'] ?? 0;
+    final ttpOnTime = settings['ttpOnTime'] ?? 0;
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Strong Tea Sequence");
+
+    print("Waiting ttpDelay: $ttpDelay seconds");
+    await Future.delayed(Duration(seconds: ttpDelay));
+    print("ttpDelay complete");
+
+    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+
+    print("Waiting ttpOnTime: $ttpOnTime seconds");
+    await Future.delayed(Duration(seconds: ttpOnTime));
+    print("ttpOnTime complete");
+
+    print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Strong Tea Sequence Complete");
+  }
+
+  Future<void> _executeLiteTeaSequence() async {
+    final settings = bloc.delaySettings['liteTea'];
+    if (settings == null) return;
+
+    final ttpDelay = settings['ttpDelay'] ?? 0;
+    final ttpOnTime = settings['ttpOnTime'] ?? 0;
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Lite Tea Sequence");
+
+    print("Waiting ttpDelay: $ttpDelay seconds");
+    await Future.delayed(Duration(seconds: ttpDelay));
+    print("ttpDelay complete");
+
+    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+
+    print("Waiting ttpOnTime: $ttpOnTime seconds");
+    await Future.delayed(Duration(seconds: ttpOnTime));
+    print("ttpOnTime complete");
+
+    print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Lite Tea Sequence Complete");
+  }
+
+  Future<void> _executeBlackTeaSequence() async {
+    final settings = bloc.delaySettings['blackTea'];
+    if (settings == null) return;
+
+    final ttpDelay = settings['ttpDelay'] ?? 0;
+    final ttpOnTime = settings['ttpOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Black Tea Sequence");
+
+    print("Waiting ttpDelay: $ttpDelay seconds");
+    await Future.delayed(Duration(seconds: ttpDelay));
+    print("ttpDelay complete");
+
+    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+
+    print("Waiting ttpOnTime: $ttpOnTime seconds");
+    await Future.delayed(Duration(seconds: ttpOnTime));
+    print("ttpOnTime complete");
+
+    print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Black Tea Sequence Complete");
+  }
+
+  Future<void> _executeDipTeaSequence() async {
+    final settings = bloc.delaySettings['dipTea'];
+    if (settings == null) return;
+
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+
+    print("Starting Dip Tea Sequence");
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Dip Tea Sequence Complete");
+  }
+
+  Future<void> _executeHotMilkSequence() async {
+    final settings = bloc.delaySettings['hotMilk'];
+    if (settings == null) return;
+
+    final milkDelay = settings['milkDelay'] ?? 0;
+    final milkOnTime = settings['milkOnTime'] ?? 0;
+    final waterDelay = settings['waterDelay'] ?? 0;
+    final waterOnTime = settings['waterOnTime'] ?? 0;
+
+    print("Starting Hot Milk Sequence");
+
+    print("Waiting milkDelay: $milkDelay seconds");
+    await Future.delayed(Duration(seconds: milkDelay));
+    print("milkDelay complete");
+
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+
+    print("Waiting milkOnTime: $milkOnTime seconds");
+    await Future.delayed(Duration(seconds: milkOnTime));
+    print("milkOnTime complete");
+
+    print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+
+    print("Waiting waterDelay: $waterDelay seconds");
+    await Future.delayed(Duration(seconds: waterDelay));
+    print("waterDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterOnTime: $waterOnTime seconds");
+    await Future.delayed(Duration(seconds: waterOnTime));
+    print("waterOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Hot Milk Sequence Complete");
+  }
+
+  Future<void> _executeHotWaterSequence() async {
+    final settings = bloc.delaySettings['hotWater'];
+    if (settings == null) return;
+
+    final waterValveDelay = settings['waterValveDelay'] ?? 0;
+    final waterValveOnTime = settings['waterValveOnTime'] ?? 0;
+
+    print("Starting Hot Water Sequence");
+
+    print("Waiting waterValveDelay: $waterValveDelay seconds");
+    await Future.delayed(Duration(seconds: waterValveDelay));
+    print("waterValveDelay complete");
+
+    print("Sending Hot Water Valve ON: {MHWV: 1}");
+    await bloc.serialService.sendJsonData({"MHWV": "1"});
+
+    print("Waiting waterValveOnTime: $waterValveOnTime seconds");
+    await Future.delayed(Duration(seconds: waterValveOnTime));
+    print("waterValveOnTime complete");
+
+    print("Sending Hot Water Valve OFF: {MHWV: 0}");
+    await bloc.serialService.sendJsonData({"MHWV": "0"});
+
+    print("Hot Water Sequence Complete");
+  }
 
   void _startBrewing() {
     _sendBrewCommand();
@@ -316,6 +652,81 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     bloc.companyName = prefs.getString('companyName') ?? '';
+
+    bloc.delaySettings['strongCoffee'] = {
+      'cpDelay': prefs.getInt('strongCoffee_cpDelay') ?? 0,
+      'cpOnTime': prefs.getInt('strongCoffee_cpOnTime') ?? 0,
+      'milkDelay': prefs.getInt('strongCoffee_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('strongCoffee_milkOnTime') ?? 0,
+      'waterDelay': prefs.getInt('strongCoffee_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('strongCoffee_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['liteCoffee'] = {
+      'cpDelay': prefs.getInt('liteCoffee_cpDelay') ?? 0,
+      'cpOnTime': prefs.getInt('liteCoffee_cpOnTime') ?? 0,
+      'milkDelay': prefs.getInt('liteCoffee_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('liteCoffee_milkOnTime') ?? 0,
+      'waterDelay': prefs.getInt('liteCoffee_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('liteCoffee_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['blackCoffee'] = {
+      'ctpDelay': prefs.getInt('blackCoffee_ctpDelay') ?? 0,
+      'ctpOnTime': prefs.getInt('blackCoffee_ctpOnTime') ?? 0,
+      'waterDelay': prefs.getInt('blackCoffee_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('blackCoffee_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['strongTea'] = {
+      'ttpDelay': prefs.getInt('strongTea_ttpDelay') ?? 0,
+      'ttpOnTime': prefs.getInt('strongTea_ttpOnTime') ?? 0,
+      'milkDelay': prefs.getInt('strongTea_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('strongTea_milkOnTime') ?? 0,
+      'waterDelay': prefs.getInt('strongTea_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('strongTea_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['liteTea'] = {
+      'ttpDelay': prefs.getInt('liteTea_ttpDelay') ?? 0,
+      'ttpOnTime': prefs.getInt('liteTea_ttpOnTime') ?? 0,
+      'milkDelay': prefs.getInt('liteTea_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('liteTea_milkOnTime') ?? 0,
+      'waterDelay': prefs.getInt('liteTea_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('liteTea_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['blackTea'] = {
+      'ttpDelay': prefs.getInt('blackTea_ttpDelay') ?? 0,
+      'ttpOnTime': prefs.getInt('blackTea_ttpOnTime') ?? 0,
+      'waterDelay': prefs.getInt('blackTea_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('blackTea_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['dipTea'] = {
+      'waterDelay': prefs.getInt('dipTea_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('dipTea_waterOnTime') ?? 0,
+      'milkDelay': prefs.getInt('dipTea_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('dipTea_milkOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['hotMilk'] = {
+      'milkDelay': prefs.getInt('hotMilk_milkDelay') ?? 0,
+      'milkOnTime': prefs.getInt('hotMilk_milkOnTime') ?? 0,
+      'waterDelay': prefs.getInt('hotMilk_waterDelay') ?? 0,
+      'waterOnTime': prefs.getInt('hotMilk_waterOnTime') ?? 0,
+    };
+
+    bloc.delaySettings['hotWater'] = {
+      'waterValveDelay': prefs.getInt('hotWater_waterValveDelay') ?? 0,
+      'waterValveOnTime': prefs.getInt('hotWater_waterValveOnTime') ?? 0,
+    };
+
+
+
+    print("strongCoffee cpDelay = ${bloc.delaySettings['strongCoffee']?['cpDelay']}");
+
+
     print("--------_companyName---------->"+bloc.companyName);
 
   }
