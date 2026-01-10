@@ -38,6 +38,8 @@ dependencies:
   shared_preferences: ^2.5.4
   gap: ^3.0.1
   flutter_bloc: ^9.1.1
+  usb_serial: ^0.5.2
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:

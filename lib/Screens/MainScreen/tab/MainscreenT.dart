@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:coffee_vending/Screens/MainScreen/bloc/main_screen_bloc.dart';
 import 'package:coffee_vending/Screens/MainScreen/tab/MainscreenT.dart';
 import 'package:coffee_vending/Screens/adminLogin/tab/AdminScreenLoginT.dart';
 import 'package:coffee_vending/Widgets/WavePainter.dart';
+import 'package:coffee_vending/helper/customtext.dart';
 import 'package:coffee_vending/model/ItemDataModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,10 +34,41 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         bloc.currentTime = DateTime.now();
       });
     });
+
+    _initNodeMCUConnection();
+
+    bloc.serialService.onConnectionChanged = (bool status) {
+      setState(() {
+        bloc.isNodeMCUOnline = status;
+      });
+    };
+
+    bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _checkNodeMCUConnection();
+    });
+
+  }
+
+
+  Future<void> _initNodeMCUConnection() async {
+    bool connected = await bloc.serialService.connect();
+    setState(() {
+      bloc.isNodeMCUOnline = connected;
+    });
+  }
+
+  Future<void> _checkNodeMCUConnection() async {
+    bool connected = await bloc.serialService.checkConnection();
+    if (connected != bloc.isNodeMCUOnline) {
+      setState(() {
+        bloc.isNodeMCUOnline = connected;
+      });
+    }
   }
 
   @override
   void dispose() {
+    bloc.connectionCheckTimer?.cancel();
     bloc.timer.cancel();
     super.dispose();
   }
@@ -58,7 +92,125 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     return '$hour:$minute:$second $period';
   }
 
+  Future<void> _sendBrewCommand() async {
+    if (bloc.selectedItem == null) return;
+
+    String drinkName = '';
+    String drinkCode = '';
+
+    switch (bloc.selectedItem) {
+      case 'c1':
+        drinkName = 'Strong Coffee';
+        drinkCode = 'SC';
+        break;
+      case 'c2':
+        drinkName = 'Lite Coffee';
+        drinkCode = 'LC';
+        break;
+      case 'c3':
+        drinkName = 'Black Coffee';
+        drinkCode = 'BC';
+        break;
+      case 'c4':
+        drinkName = 'Espresso';
+        drinkCode = 'EP';
+        break;
+      case 't1':
+        drinkName = 'Strong Tea';
+        drinkCode = 'ST';
+        break;
+      case 't2':
+        drinkName = 'Lite Tea';
+        drinkCode = 'LT';
+        break;
+      case 't3':
+        drinkName = 'Black Tea';
+        drinkCode = 'BT';
+        break;
+      case 'e1':
+        drinkName = 'Hot Milk';
+        drinkCode = 'HM';
+        break;
+      case 'e2':
+        drinkName = 'Hot Water';
+        drinkCode = 'HW';
+        break;
+    }
+
+    final Map<String, dynamic> jsonData = {
+      "drink": drinkName,
+      "drink_code": drinkCode,
+      "pin": 2,
+      "value": 1
+    };
+
+    final String jsonString = jsonEncode(jsonData);
+    print("Sending JSON → $jsonString");
+    if (bloc.isNodeMCUOnline) {
+      await bloc.serialService.sendJsonData(jsonData);
+      print("Brew command sent: $drinkName ($drinkCode)");
+    }
+  }
+
+  // Future<void> _sendBrewCommand() async {
+  //   if (bloc.selectedItem == null) return;
+  //
+  //   String drinkName = '';
+  //   String drinkCode = '';
+  //
+  //   switch (bloc.selectedItem) {
+  //     case 'c1':
+  //       drinkName = 'Strong Coffee';
+  //       drinkCode = 'SC';
+  //       break;
+  //     case 'c2':
+  //       drinkName = 'Lite Coffee';
+  //       drinkCode = 'LC';
+  //       break;
+  //     case 'c3':
+  //       drinkName = 'Black Coffee';
+  //       drinkCode = 'BC';
+  //       break;
+  //     case 'c4':
+  //       drinkName = 'Espresso';
+  //       drinkCode = 'EP';
+  //       break;
+  //     case 't1':
+  //       drinkName = 'Strong Tea';
+  //       drinkCode = 'ST';
+  //       break;
+  //     case 't2':
+  //       drinkName = 'Lite Tea';
+  //       drinkCode = 'LT';
+  //       break;
+  //     case 't3':
+  //       drinkName = 'Black Tea';
+  //       drinkCode = 'BT';
+  //       break;
+  //     case 'e1':
+  //       drinkName = 'Hot Milk';
+  //       drinkCode = 'HM';
+  //       break;
+  //     case 'e2':
+  //       drinkName = 'Hot Water';
+  //       drinkCode = 'HW';
+  //       break;
+  //   }
+  //
+  //   if (bloc.isNodeMCUOnline) {
+  //     await bloc.serialService.sendJsonData({
+  //       "drink": drinkName,
+  //       "drink_code": drinkCode,
+  //       "pin": 2,
+  //       "value": 1
+  //     });
+  //     print('Brew command sent: $drinkName ($drinkCode)');
+  //   }
+  // }
+
   void _startBrewing() {
+    _sendBrewCommand();
+
     setState(() {
       bloc.isBrewAnimating = true;
       bloc.brewProgress = 0.0;
@@ -83,29 +235,81 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   void _showBrewComplete() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 32),
-            const SizedBox(width: 12),
-            const Text('Brewing Complete! '),
-          ],
-        ),
-        content: const Text('Your beverage is ready. Please collect it.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                bloc.selectedItem = null;
-              });
-            },
-            child: const Text('OK'),
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.brown.shade400,
+                Colors.brown.shade800,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.brown.withOpacity(0.5),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: Colors.green.shade600,
+                  size: 64,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Brewing Complete!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Your beverage is ready',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please collect it',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    Future.delayed(const Duration(seconds:2), () {
+      Navigator.pop(context);
+      setState(() {
+        bloc.selectedItem = null;
+      });
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -329,7 +533,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               Row(
                 children: [
                   Text(
-                    "temp :",
+                    "Temp :",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -365,16 +569,48 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   ),
                 ],
               ),
-              IconButton(
-                splashRadius: 1,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>  adminScreenLogin(),
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
                       ),
-                    );
-                  }, icon: Icon(Icons.admin_panel_settings,color: Colors.brown.shade900,))
+                      borderRadius: BorderRadius.circular(10),
+                      color: bloc.isNodeMCUOnline ? Colors.green.shade200 : Colors.red.shade200,
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          bloc.isNodeMCUOnline ? Icons.usb : Icons.usb_off,
+                          size: 16,
+                          color:bloc.isNodeMCUOnline ? Colors.green : Colors.red,
+                        ),
+                        SizedBox(width: 4),
+                        CustomText(
+                          text: bloc.isNodeMCUOnline ? "Online" : "Offline",
+                          weight: FontWeight.w500,
+                          color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    splashRadius: 1,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => adminScreenLogin(),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.admin_panel_settings, color: Colors.brown.shade900),
+                  ),
+                ],
+              ),
             ],
           )
           

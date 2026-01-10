@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:coffee_vending/Widgets/SerialCommunication.dart';
 import 'package:meta/meta.dart';
 
 part 'main_screen_event.dart';
@@ -14,6 +15,10 @@ class MainScreenBloc extends Bloc<MainScreenEvent, MainScreenState> {
   DateTime currentTime = DateTime.now();
   bool isBrewAnimating = false;
   double brewProgress = 0.0;
+
+  final SerialService serialService = SerialService();
+  bool isNodeMCUOnline = false;
+  Timer? connectionCheckTimer;
 
   MainScreenBloc() : super(MainScreenInitial()) {
 
