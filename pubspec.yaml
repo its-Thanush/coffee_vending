@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   screen_brightness: ^2.1.7
   shared_preferences: ^2.5.4
+  gap: ^3.0.1
+  flutter_bloc: ^9.1.1
 
 dev_dependencies:
   flutter_test:

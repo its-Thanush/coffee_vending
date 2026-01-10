@@ -1,7 +1,8 @@
+import 'package:coffee_vending/Screens/MainScreen/bloc/main_screen_bloc.dart';
 import 'package:coffee_vending/allImports.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:screen_brightness/screen_brightness.dart';
-
 
 
 Future<void> main() async {
@@ -19,7 +20,7 @@ Future<void> main() async {
   );
 
 
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -27,14 +28,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        brightness: Brightness.light,
+    return BlocProvider<MainScreenBloc>(
+      create: (_) => MainScreenBloc(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          brightness: Brightness.light,
+        ),
+        home: Mainscreen(),
       ),
-      home:  Mainscreen(),
     );
   }
 }

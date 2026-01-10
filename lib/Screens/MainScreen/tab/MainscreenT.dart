@@ -1,5 +1,10 @@
+import 'package:coffee_vending/Screens/MainScreen/bloc/main_screen_bloc.dart';
+import 'package:coffee_vending/Screens/MainScreen/tab/MainscreenT.dart';
 import 'package:coffee_vending/Screens/adminLogin/tab/AdminScreenLoginT.dart';
+import 'package:coffee_vending/Widgets/WavePainter.dart';
+import 'package:coffee_vending/model/ItemDataModel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -13,27 +18,24 @@ class VendingMachineScreen extends StatefulWidget {
 }
 
 class _VendingMachineScreenState extends State<VendingMachineScreen> {
-  String? selectedItem;
-  String _companyName = '';
-  late Timer _timer;
-  DateTime _currentTime = DateTime.now();
-  bool isBrewAnimating = false;
-  double brewProgress = 0.0;
+
+  late MainScreenBloc bloc;
 
   @override
   void initState() {
     super.initState();
+    bloc=BlocProvider.of<MainScreenBloc>(context);
     _loadSettings();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    bloc.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
-        _currentTime = DateTime.now();
+        bloc.currentTime = DateTime.now();
       });
     });
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    bloc.timer.cancel();
     super.dispose();
   }
 
@@ -58,21 +60,21 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startBrewing() {
     setState(() {
-      isBrewAnimating = true;
-      brewProgress = 0.0;
+      bloc.isBrewAnimating = true;
+      bloc.brewProgress = 0.0;
     });
 
     Timer.periodic(const Duration(milliseconds: 30), (timer) {
-      if (brewProgress >= 1.0) {
+      if (bloc.brewProgress >= 1.0) {
         timer.cancel();
         setState(() {
-          isBrewAnimating = false;
-          brewProgress = 0.0;
+          bloc.isBrewAnimating = false;
+          bloc.brewProgress = 0.0;
         });
         _showBrewComplete();
       } else {
         setState(() {
-          brewProgress += 0.01;
+          bloc.brewProgress += 0.01;
         });
       }
     });
@@ -96,7 +98,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                selectedItem = null;
+                bloc.selectedItem = null;
               });
             },
             child: const Text('OK'),
@@ -109,16 +111,21 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
 
-    _companyName = prefs.getString('companyName') ?? '';
-    print("--------_companyName---------->"+_companyName);
+    bloc.companyName = prefs.getString('companyName') ?? '';
+    print("--------_companyName---------->"+bloc.companyName);
 
   }
-
 
 
   @override
   Widget build(BuildContext context) {
 
+    return BlocListener<MainScreenBloc, MainScreenState>(
+  listener: (context, state) {
+    // TODO: implement listener
+  },
+  child: BlocBuilder<MainScreenBloc, MainScreenState>(
+  builder: (context, state) {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -155,9 +162,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           ),
         ),
       ),
-      floatingActionButton: selectedItem != null ? _buildBrewButton() : null,
+      floatingActionButton: bloc.selectedItem != null ? _buildBrewButton() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
+  },
+),
+);
   }
 
 
@@ -165,7 +175,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     const double size = 120; // 👈 reduced radius source
 
     return GestureDetector(
-      onTap: isBrewAnimating ? null : _startBrewing,
+      onTap: bloc.isBrewAnimating ? null : _startBrewing,
       child: Container(
         width: size,
         height: size,
@@ -211,7 +221,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                     right: 0,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 30),
-                      height: size * brewProgress,
+                      height: size * bloc.brewProgress,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -224,7 +234,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                         ),
                       ),
                       child: CustomPaint(
-                        painter: WavePainter(brewProgress),
+                        painter: WavePainter(bloc.brewProgress),
                       ),
                     ),
                   ),
@@ -240,25 +250,25 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   Icons.coffee_maker,
                   size: 40, // reduced
                   color:
-                  isBrewAnimating ? Colors.white : Colors.brown.shade900,
+                  bloc.isBrewAnimating ? Colors.white : Colors.brown.shade900,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isBrewAnimating ? 'BREWING' : 'BREW',
+                  bloc.isBrewAnimating ? 'BREWING' : 'BREW',
                   style: TextStyle(
                     fontSize: 18, // reduced
                     fontWeight: FontWeight.bold,
-                    color: isBrewAnimating
+                    color: bloc.isBrewAnimating
                         ? Colors.white
                         : Colors.brown.shade900,
                     letterSpacing: 2,
                   ),
                 ),
-                if (isBrewAnimating)
+                if (bloc.isBrewAnimating)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      '${(brewProgress * 100).toInt()}%',
+                      '${(bloc.brewProgress * 100).toInt()}%',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -295,7 +305,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_companyName,
+              Text(bloc.companyName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -304,7 +314,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               ),
                SizedBox(height: 4),
               Text(
-                _formatDate(_currentTime),
+                _formatDate(bloc.currentTime),
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.brown.shade600,
@@ -346,7 +356,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   ),
                   SizedBox(width: 10,),
                   Text(
-                    _formatTime(_currentTime),
+                    _formatTime(bloc.currentTime),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -470,15 +480,15 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
   Widget _buildItemCard(ItemData item) {
-    final isSelected = selectedItem == item.id;
+    final isSelected = bloc.selectedItem == item.id;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          if (selectedItem == item.id) {
-            selectedItem = null;
+          if (bloc.selectedItem == item.id) {
+            bloc.selectedItem = null;
           } else {
-            selectedItem = item.id;
+            bloc.selectedItem = item.id;
           }
         });
       },
@@ -584,47 +594,5 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 }
 
-class ItemData {
-  final String name;
-  final String id;
-  final Color color;
-  final Color? textColor;
-  final String imagePath;
 
-  ItemData(this.name, this.id, this.color, {this.textColor, required this.imagePath});
-}
 
-class WavePainter extends CustomPainter {
-  final double progress;
-
-  WavePainter(this.progress);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.brown.shade800.withOpacity(0.3)
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final waveHeight = 8.0;
-    final waveLength = size.width / 2;
-
-    path.moveTo(0, 0);
-
-    for (double i = 0; i <= size.width; i++) {
-      path.lineTo(
-        i,
-        waveHeight * math.sin((i / waveLength * 2 * math.pi) + (progress * 10)),
-      );
-    }
-
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(WavePainter oldDelegate) => true;
-}
