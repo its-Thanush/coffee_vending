@@ -36,6 +36,18 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   int _teaPump = 5;
   int _coffeePump = 5;
 
+  double _milkPumpDelay = 0.0;
+  double _milkPumpOnTime = 0.0;
+  double _milkPumpForwardTime = 0.0;
+
+  double _teaPumpDelay = 0.0;
+  double _teaPumpOnTime = 0.0;
+  double _teaPumpForwardTime = 0.0;
+
+  double _coffeePumpDelay = 0.0;
+  double _coffeePumpOnTime = 0.0;
+  double _coffeePumpForwardTime = 0.0;
+
   final Map<String, int> _drinkCounts = {
     'Strong Coffee': 0,
     'Lite Coffee': 0,
@@ -66,6 +78,11 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   int _teaCleanDelay = 0;
   int _coffeeCleanDelay = 0;
   int _milkCleanDelay = 0;
+
+
+  double _teaPumpSpeed = 512.0;
+  double _coffeePumpSpeed = 512.0;
+  double _milkPumpSpeed = 512.0;
 
   @override
   void initState() {
@@ -337,6 +354,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
             Tab(icon: Icon(Icons.cleaning_services, size: 20), text: 'Cleaning'),
             Tab(icon: Icon(Icons.replay, size: 20), text: 'Reverse'),
             Tab(icon: Icon(Icons.format_list_numbered, size: 20), text: 'Counts'),
+            Tab(icon: Icon(Icons.speed, size: 20), text: 'Speed'),
             Tab(icon: Icon(Icons.settings, size: 20), text: 'Config'),
           ],
         ),
@@ -349,6 +367,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           _buildCleaningSettings(),
           _buildReverseSettings(),
           _buildCountsSettings(),
+          _buildSpeedSettings(),
           _buildConfigSettings(),
         ],
       ),
@@ -558,6 +577,24 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     Colors.brown,
                         (value) => setState(() => _coffeeTemp = value),
                   ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        print('Coffee Temp Set: $_coffeeTemp°C');
+                      },
+                      child: const Text('Coffee Temp Set', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
                   const Divider(height: 40),
                   _buildTemperatureSlider(
                     'Tea Brewing Temperature',
@@ -565,6 +602,24 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     Icons.emoji_food_beverage,
                     Colors.green,
                         (value) => setState(() => _teaTemp = value),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        print('Tea Temp Set: $_teaTemp°C');
+                      },
+                      child: const Text('Tea Temp Set', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -751,20 +806,175 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _buildReverseItem('Milk Pump Reverse', _milkPump, Icons.water_drop, Colors.blue,
-                          (value) => setState(() => _milkPump = value)),
+                  _buildReverseItem('Milk Pump Reverse', _milkPumpDelay, _milkPumpOnTime, _milkPumpForwardTime, Icons.water_drop, Colors.blue,
+                      onDelayChanged: (value) => setState(() => _milkPumpDelay = value),
+                      onOnTimeChanged: (value) => setState(() => _milkPumpOnTime = value),
+                      onForwardTimeChanged: (value) => setState(() => _milkPumpForwardTime = value),
+                      onReverse: () => print('Milk Pump Reverse triggered')),
                   const Divider(height: 32),
-                  _buildReverseItem('Tea Pump Reverse', _teaPump, Icons.emoji_food_beverage, Colors.green,
-                          (value) => setState(() => _teaPump = value)),
+                  _buildReverseItem('Tea Pump Reverse', _teaPumpDelay, _teaPumpOnTime, _teaPumpForwardTime, Icons.emoji_food_beverage, Colors.green,
+                      onDelayChanged: (value) => setState(() => _teaPumpDelay = value),
+                      onOnTimeChanged: (value) => setState(() => _teaPumpOnTime = value),
+                      onForwardTimeChanged: (value) => setState(() => _teaPumpForwardTime = value),
+                      onReverse: () => print('Tea Pump Reverse triggered')),
                   const Divider(height: 32),
-                  _buildReverseItem('Coffee Pump Reverse', _coffeePump, Icons.coffee, Colors.brown,
-                          (value) => setState(() => _coffeePump = value)),
+                  _buildReverseItem('Coffee Pump Reverse', _coffeePumpDelay, _coffeePumpOnTime, _coffeePumpForwardTime, Icons.coffee, Colors.brown,
+                      onDelayChanged: (value) => setState(() => _coffeePumpDelay = value),
+                      onOnTimeChanged: (value) => setState(() => _coffeePumpOnTime = value),
+                      onForwardTimeChanged: (value) => setState(() => _coffeePumpForwardTime = value),
+                      onReverse: () => print('Coffee Pump Reverse triggered')),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReverseItem(
+      String label,
+      double delayValue,
+      double onTimeValue,
+      double forwardTimeValue,
+      IconData icon,
+      Color color, {
+        required Function(double) onDelayChanged,
+        required Function(double) onOnTimeChanged,
+        required Function(double) onForwardTimeChanged,
+        required VoidCallback onReverse,
+      }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 16),
+            Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Delay', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => delayValue > 0 ? onDelayChanged((delayValue - 0.1).clamp(0, 999.9)) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: color,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('${delayValue.toStringAsFixed(1)} s',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                      ),
+                      IconButton(
+                        onPressed: () => onDelayChanged((delayValue + 0.1).clamp(0, 999.9)),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: color,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('On Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => onTimeValue > 0 ? onOnTimeChanged((onTimeValue - 0.1).clamp(0, 999.9)) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: color,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('${onTimeValue.toStringAsFixed(1)} s',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                      ),
+                      IconButton(
+                        onPressed: () => onOnTimeChanged((onTimeValue + 0.1).clamp(0, 999.9)),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: color,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Forward Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => forwardTimeValue > 0 ? onForwardTimeChanged((forwardTimeValue - 0.1).clamp(0, 999.9)) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: color,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('${forwardTimeValue.toStringAsFixed(1)} s',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                      ),
+                      IconButton(
+                        onPressed: () => onForwardTimeChanged((forwardTimeValue + 0.1).clamp(0, 999.9)),
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: color,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              onPressed: onReverse,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Reverse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -891,6 +1101,212 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildSpeedSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildInfoCard('Configure motor speed for each pump (50-1023 PWM value).'),
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _buildSpeedSlider(
+                    'Tea Pump Speed',
+                    _teaPumpSpeed,
+                    Icons.emoji_food_beverage,
+                    Colors.green,
+                        (value) => setState(() => _teaPumpSpeed = value),
+                  ),
+                  const Divider(height: 40),
+                  _buildSpeedSlider(
+                    'Coffee Pump Speed',
+                    _coffeePumpSpeed,
+                    Icons.coffee,
+                    Colors.brown,
+                        (value) => setState(() => _coffeePumpSpeed = value),
+                  ),
+                  const Divider(height: 40),
+                  _buildSpeedSlider(
+                    'Milk Pump Speed',
+                    _milkPumpSpeed,
+                    Icons.water_drop,
+                    Colors.blue,
+                        (value) => setState(() => _milkPumpSpeed = value),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpeedSlider(String label, double value, IconData icon, Color color, Function(double) onChanged) {
+    TextEditingController controller = TextEditingController(text: value.round().toString());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Slider(
+                value: value,
+                min: 50,
+                max: 1023,
+                divisions: 973,
+                activeColor: color,
+                label: '${value.round()}',
+                onChanged: onChanged,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      width: 400,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(icon, color: color, size: 28),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Enter $label',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.close),
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          TextField(
+                            controller: controller,
+                            keyboardType: TextInputType.number,
+                            autofocus: true,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'Speed Value',
+                              hintText: 'Enter value (50-1023)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: color, width: 2),
+                              ),
+                              prefixIcon: Icon(Icons.speed, color: color),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Valid range: 50 - 1023',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                ),
+                                child: const Text(
+                                  'Cancel',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  int? newValue = int.tryParse(controller.text);
+                                  if (newValue != null && newValue >= 50 && newValue <= 1023) {
+                                    onChanged(newValue.toDouble());
+                                    Navigator.pop(context);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please enter a valid value between 50 and 1023'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: color,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Set Speed',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withOpacity(0.4), width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${value.round()}',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildConfigSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -973,46 +1389,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildReverseItem(String label, int value, IconData icon, Color color, Function(int) onChanged) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => value > 0 ? onChanged(value - 1) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: color,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('$value sec', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-                  ),
-                  IconButton(
-                    onPressed: () => onChanged(value + 1),
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: color,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
