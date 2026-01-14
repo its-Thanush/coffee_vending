@@ -980,51 +980,45 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      color: bloc.isNodeMCUOnline ? Colors.green.shade200 : Colors.red.shade200,
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          bloc.isNodeMCUOnline ? Icons.usb : Icons.usb_off,
-                          size: 16,
-                          color:bloc.isNodeMCUOnline ? Colors.green : Colors.red,
-                        ),
-                        SizedBox(width: 4),
-                        CustomText(
-                          text: bloc.isNodeMCUOnline ? "Online" : "Offline",
-                          weight: FontWeight.w500,
-                          color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    splashRadius: 1,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => adminScreenLogin(),
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.admin_panel_settings, color: Colors.brown.shade900),
-                  ),
-                ],
-              ),
-            ],
-          )
-          
+      Row(
+        children: [
+          // Status Circle
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
+              boxShadow: [
+                BoxShadow(
+                  color: (bloc.isNodeMCUOnline ? Colors.green : Colors.red)
+                      .withOpacity(0.5),
+                  blurRadius: 6,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(width: 7),
+
+          // Admin Button
+          IconButton(
+            splashRadius: 3,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => adminScreenLogin(),
+                ),
+              );
+            },
+            icon: Icon(Icons.admin_panel_settings, color: Colors.brown.shade900),
+          ),
+        ],
+      ),
+      ],
+          ),
         ],
       ),
     );
