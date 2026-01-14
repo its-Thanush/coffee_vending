@@ -531,15 +531,15 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: waterValveDelay));
     print("waterValveDelay complete");
 
-    print("Sending Hot Water Valve ON: {MHWV: 1}");
-    await bloc.serialService.sendJsonData({"MHWV": "1"});
+    print("Sending Hot Water Valve ON: {HWV: 1}");
+    await bloc.serialService.sendJsonData({"HWV": "1"});
 
     print("Waiting waterValveOnTime: $waterValveOnTime seconds");
     await Future.delayed(Duration(seconds: waterValveOnTime));
     print("waterValveOnTime complete");
 
-    print("Sending Hot Water Valve OFF: {MHWV: 0}");
-    await bloc.serialService.sendJsonData({"MHWV": "0"});
+    print("Sending Hot Water Valve OFF: {HWV: 0}");
+    await bloc.serialService.sendJsonData({"HWV": "0"});
 
     print("Hot Water Sequence Complete");
   }
