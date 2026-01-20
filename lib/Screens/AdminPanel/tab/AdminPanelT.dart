@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -60,7 +61,56 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     'Hot Water': 0,
   };
 
+  final Map<String, int> _limitCounts = {
+    'Strong Coffee': 0,
+    'Lite Coffee': 0,
+    'Black Coffee': 0,
+    'Strong Tea': 0,
+    'Lite Tea': 0,
+    'Black Tea': 0,
+    'Dip Tea': 0,
+    'Hot Milk': 0,
+    'Hot Water': 0,
+  };
+
+  final Map<String, int> _jumpCounts = {
+    'Strong Coffee': 0,
+    'Lite Coffee': 0,
+    'Black Coffee': 0,
+    'Strong Tea': 0,
+    'Lite Tea': 0,
+    'Black Tea': 0,
+    'Dip Tea': 0,
+    'Hot Milk': 0,
+    'Hot Water': 0,
+  };
+
   final Map<String, bool> _showCountControls = {
+    'Strong Coffee': false,
+    'Lite Coffee': false,
+    'Black Coffee': false,
+    'Strong Tea': false,
+    'Lite Tea': false,
+    'Black Tea': false,
+    'Dip Tea': false,
+    'Hot Milk': false,
+    'Hot Water': false,
+  };
+
+  final Map<String, bool> _jumpCountControls = {
+    'Strong Coffee': false,
+    'Lite Coffee': false,
+    'Black Coffee': false,
+    'Strong Tea': false,
+    'Lite Tea': false,
+    'Black Tea': false,
+    'Dip Tea': false,
+    'Hot Milk': false,
+    'Hot Water': false,
+  };
+
+
+  final Map<String, bool> _limitCountControls = {
     'Strong Coffee': false,
     'Lite Coffee': false,
     'Black Coffee': false,
@@ -87,7 +137,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _loadSettings();
   }
 
@@ -195,6 +245,30 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       _drinkCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
       _drinkCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
 
+      _limitCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
+      _limitCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
+      _limitCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
+      _limitCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
+      _limitCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
+      _limitCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
+      _limitCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
+      _limitCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
+      _limitCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
+
+      _jumpCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
+      _jumpCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
+      _jumpCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
+      _jumpCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
+      _jumpCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
+      _jumpCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
+      _jumpCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
+      _jumpCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
+      _jumpCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
+
+
+
+
+
       _companyName = prefs.getString('companyName') ?? '';
       _configDelay = prefs.getInt('configDelay') ?? 0;
 
@@ -281,6 +355,27 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     await prefs.setInt('count_hotMilk', _drinkCounts['Hot Milk']!);
     await prefs.setInt('count_hotWater', _drinkCounts['Hot Water']!);
 
+    await prefs.setInt('count_strongCoffee', _limitCounts['Strong Coffee']!);
+    await prefs.setInt('count_liteCoffee', _limitCounts['Lite Coffee']!);
+    await prefs.setInt('count_blackCoffee', _limitCounts['Black Coffee']!);
+    await prefs.setInt('count_strongTea', _limitCounts['Strong Tea']!);
+    await prefs.setInt('count_liteTea', _limitCounts['Lite Tea']!);
+    await prefs.setInt('count_blackTea', _limitCounts['Black Tea']!);
+    await prefs.setInt('count_dipTea', _limitCounts['Dip Tea']!);
+    await prefs.setInt('count_hotMilk', _limitCounts['Hot Milk']!);
+    await prefs.setInt('count_hotWater', _limitCounts['Hot Water']!);
+
+
+    await prefs.setInt('count_strongCoffee', _jumpCounts['Strong Coffee']!);
+    await prefs.setInt('count_liteCoffee', _jumpCounts['Lite Coffee']!);
+    await prefs.setInt('count_blackCoffee', _jumpCounts['Black Coffee']!);
+    await prefs.setInt('count_strongTea', _jumpCounts['Strong Tea']!);
+    await prefs.setInt('count_liteTea', _jumpCounts['Lite Tea']!);
+    await prefs.setInt('count_blackTea', _jumpCounts['Black Tea']!);
+    await prefs.setInt('count_dipTea', _jumpCounts['Dip Tea']!);
+    await prefs.setInt('count_hotMilk', _jumpCounts['Hot Milk']!);
+    await prefs.setInt('count_hotWater', _jumpCounts['Hot Water']!);
+
     await prefs.setString('companyName', _companyName);
     await prefs.setInt('configDelay', _configDelay);
 
@@ -293,6 +388,241 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
         ),
       );
     }
+  }
+
+  void _showDelayInputDialog(String title, double currentValue, Color color, IconData icon, Function(double) onSet) {
+    TextEditingController controller = TextEditingController(text: currentValue.toStringAsFixed(1));
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}\.?\d{0,1}')),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Value',
+                  hintText: '(e.g., 12.5)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: color, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.timer_outlined, color: color),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Max 99.9 seconds',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      double? newValue = double.tryParse(controller.text);
+                      if (newValue != null && newValue >= 0 && newValue <= 99.9) {
+                        onSet(newValue);
+                        Navigator.pop(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a valid value (0 - 99.9)'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Set Value',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  void _showDecimalInputDialog(
+      String title,
+      double currentValue,
+      Color color,
+      IconData icon,
+      Function(double) onSet,
+      ) {
+    TextEditingController controller = TextEditingController(text: currentValue.toStringAsFixed(1));
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d{0,3}\.?\d{0,1}')),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Value',
+                  hintText: '(e.g., 12.5)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: color, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.timer, color: color),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '(Max 99.9 seconds)',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      double? newValue = double.tryParse(controller.text);
+                      if (newValue != null && newValue >= 0 && newValue <= 99.9) {
+                        onSet(newValue);
+                        Navigator.pop(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a valid value (0 - 999.9)'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Set Value',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -471,6 +801,9 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   }
 
   Widget _buildDelayRow(String label, int delayValue, int onTimeValue, Function(int) onDelayChanged, Function(int) onTimeChanged) {
+    double delayDouble = delayValue / 10.0;
+    double onTimeDouble = onTimeValue / 10.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -494,15 +827,27 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: const Color(0xFF6B4423),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6B4423).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDelayInputDialog(
+                          'Enter Delay',
+                          delayDouble,
+                          const Color(0xFF6B4423),
+                          Icons.timer,
+                              (newValue) {
+                            int intValue = (newValue * 10).round();
+                            onDelayChanged(intValue);
+                          },
                         ),
-                        child: Text(
-                          '$delayValue sec',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6B4423).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${delayDouble.toStringAsFixed(1)} sec',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+                          ),
                         ),
                       ),
                       IconButton(
@@ -529,15 +874,27 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: const Color(0xFF6B4423),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6B4423).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDelayInputDialog(
+                          'Enter On Time',
+                          onTimeDouble,
+                          const Color(0xFF6B4423),
+                          Icons.timer,
+                              (newValue) {
+                            int intValue = (newValue * 10).round();
+                            onTimeChanged(intValue);
+                          },
                         ),
-                        child: Text(
-                          '$onTimeValue sec',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6B4423).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${onTimeDouble.toStringAsFixed(1)} sec',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+                          ),
                         ),
                       ),
                       IconButton(
@@ -555,6 +912,92 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       ],
     );
   }
+
+  // Widget _buildDelayRow(String label, int delayValue, int onTimeValue, Function(int) onDelayChanged, Function(int) onTimeChanged) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         label,
+  //         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+  //       ),
+  //       const SizedBox(height: 8),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: const Color(0xFF6B4423),
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: const Color(0xFF6B4423).withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text(
+  //                         '$delayValue sec',
+  //                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+  //                       ),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onDelayChanged(delayValue + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: const Color(0xFF6B4423),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('On Time', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => onTimeValue > 0 ? onTimeChanged(onTimeValue - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: const Color(0xFF6B4423),
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: const Color(0xFF6B4423).withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text(
+  //                         '$onTimeValue sec',
+  //                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6B4423)),
+  //                       ),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onTimeChanged(onTimeValue + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: const Color(0xFF6B4423),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildBrewingSettings() {
     return SingleChildScrollView(
@@ -708,6 +1151,9 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   }
 
   Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
+    double delayDouble = delayValue / 10.0;
+    double durationDouble = value / 10.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -736,13 +1182,25 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: color,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDelayInputDialog(
+                          'Enter Delay',
+                          delayDouble,
+                          color,
+                          icon,
+                              (newValue) {
+                            int intValue = (newValue * 10).round();
+                            onDelayChanged(intValue);
+                          },
                         ),
-                        child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('${delayDouble.toStringAsFixed(1)} sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => onDelayChanged(delayValue + 1),
@@ -768,13 +1226,25 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: color,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDelayInputDialog(
+                          'Enter Duration',
+                          durationDouble,
+                          color,
+                          icon,
+                              (newValue) {
+                            int intValue = (newValue * 10).round();
+                            onChanged(intValue);
+                          },
                         ),
-                        child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => onChanged(value + 1),
@@ -786,11 +1256,211 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                 ],
               ),
             ),
+            ElevatedButton(
+              onPressed: () {
+                print('$label triggered');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
       ],
     );
   }
+
+
+  // Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(icon, color: color, size: 28),
+  //           const SizedBox(width: 16),
+  //           Expanded(
+  //             child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+  //           ),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 16),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onDelayChanged(delayValue + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Duration', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => value > 0 ? onChanged(value - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onChanged(value + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           // Spacer(),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               print('$label triggered');
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: color,
+  //               foregroundColor: Colors.white,
+  //               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(5),
+  //               ),
+  //             ),
+  //             child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  // Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(icon, color: color, size: 28),
+  //           const SizedBox(width: 16),
+  //           Expanded(
+  //             child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+  //           ),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 16),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onDelayChanged(delayValue + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Duration', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+  //                 const SizedBox(height: 4),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => value > 0 ? onChanged(value - 1) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onChanged(value + 1),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildReverseSettings() {
     return SingleChildScrollView(
@@ -832,6 +1502,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
+
   Widget _buildReverseItem(
       String label,
       double delayValue,
@@ -870,14 +1541,23 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: color,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDecimalInputDialog(
+                          'Enter Delay',
+                          delayValue,
+                          color,
+                          icon,
+                          onDelayChanged,
                         ),
-                        child: Text('${delayValue.toStringAsFixed(1)} s',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('${delayValue.toStringAsFixed(1)} s',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => onDelayChanged((delayValue + 0.1).clamp(0, 999.9)),
@@ -903,14 +1583,23 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: color,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDecimalInputDialog(
+                          'Enter On Time',
+                          onTimeValue,
+                          color,
+                          icon,
+                          onOnTimeChanged,
                         ),
-                        child: Text('${onTimeValue.toStringAsFixed(1)} s',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('${onTimeValue.toStringAsFixed(1)} s',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => onOnTimeChanged((onTimeValue + 0.1).clamp(0, 999.9)),
@@ -940,14 +1629,23 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         icon: const Icon(Icons.remove_circle_outline),
                         color: color,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      GestureDetector(
+                        onTap: () => _showDecimalInputDialog(
+                          'Enter Forward Time',
+                          forwardTimeValue,
+                          color,
+                          icon,
+                          onForwardTimeChanged,
                         ),
-                        child: Text('${forwardTimeValue.toStringAsFixed(1)} s',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('${forwardTimeValue.toStringAsFixed(1)} s',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => onForwardTimeChanged((forwardTimeValue + 0.1).clamp(0, 999.9)),
@@ -977,6 +1675,153 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       ],
     );
   }
+
+
+  // Widget _buildReverseItem(
+  //     String label,
+  //     double delayValue,
+  //     double onTimeValue,
+  //     double forwardTimeValue,
+  //     IconData icon,
+  //     Color color, {
+  //       required Function(double) onDelayChanged,
+  //       required Function(double) onOnTimeChanged,
+  //       required Function(double) onForwardTimeChanged,
+  //       required VoidCallback onReverse,
+  //     }) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(icon, color: color, size: 28),
+  //           const SizedBox(width: 16),
+  //           Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 16),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Delay', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+  //                 const SizedBox(height: 8),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => delayValue > 0 ? onDelayChanged((delayValue - 0.1).clamp(0, 999.9)) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('${delayValue.toStringAsFixed(1)} s',
+  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onDelayChanged((delayValue + 0.1).clamp(0, 999.9)),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('On Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+  //                 const SizedBox(height: 8),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => onTimeValue > 0 ? onOnTimeChanged((onTimeValue - 0.1).clamp(0, 999.9)) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('${onTimeValue.toStringAsFixed(1)} s',
+  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onOnTimeChanged((onTimeValue + 0.1).clamp(0, 999.9)),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 12),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('Forward Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+  //                 const SizedBox(height: 8),
+  //                 Row(
+  //                   children: [
+  //                     IconButton(
+  //                       onPressed: () => forwardTimeValue > 0 ? onForwardTimeChanged((forwardTimeValue - 0.1).clamp(0, 999.9)) : null,
+  //                       icon: const Icon(Icons.remove_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //                       decoration: BoxDecoration(
+  //                         color: color.withOpacity(0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                       child: Text('${forwardTimeValue.toStringAsFixed(1)} s',
+  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+  //                     ),
+  //                     IconButton(
+  //                       onPressed: () => onForwardTimeChanged((forwardTimeValue + 0.1).clamp(0, 999.9)),
+  //                       icon: const Icon(Icons.add_circle_outline),
+  //                       color: color,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 16),
+  //           ElevatedButton(
+  //             onPressed: onReverse,
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: color,
+  //               foregroundColor: Colors.white,
+  //               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //             ),
+  //             child: const Text('Reverse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildCountsSettings() {
     return SingleChildScrollView(
@@ -1015,91 +1860,168 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(drinkName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text('Total served', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                ],
-              ),
-            ),
-            if (_showCountControls[drinkName]!)
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        if (_drinkCounts[drinkName]! > 0) {
-                          _drinkCounts[drinkName] = _drinkCounts[drinkName]! - 1;
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: color,
+            Row(
+              children: [
+                Icon(icon, color: color, size: 28),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(drinkName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Total served', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            GestureDetector(
-              onLongPress: () {
-                Future.delayed(const Duration(seconds: 7), () {
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: _buildCountControl(
+                    'Limit',
+                    _limitCounts[drinkName]!,
+                    _limitCountControls[drinkName]!,
+                    color,
+                        (value) => setState(() => _limitCounts[drinkName] = value),
+                        (show) => setState(() => _limitCountControls[drinkName] = show),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildCountControl(
+                    'Jump',
+                    _jumpCounts[drinkName]!,
+                    _jumpCountControls[drinkName]!,
+                    color,
+                        (value) => setState(() => _jumpCounts[drinkName] = value),
+                        (show) => setState(() => _jumpCountControls[drinkName] = show),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildCountControl(
+                    'Actual',
+                    _drinkCounts[drinkName]!,
+                    _showCountControls[drinkName]!,
+                    color,
+                        (value) => setState(() => _drinkCounts[drinkName] = value),
+                        (show) => setState(() => _showCountControls[drinkName] = show),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
                   setState(() {
-                    _showCountControls[drinkName] = !_showCountControls[drinkName]!;
+                    _drinkCounts[drinkName] = 0;
+                    _limitCounts[drinkName] = 0;
+                    _jumpCounts[drinkName] = 0;
+                    _showCountControls[drinkName] = false;
+                    _limitCountControls[drinkName] = false;
+                    _jumpCountControls[drinkName] = false;
                   });
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                child: Text(
-                  '${_drinkCounts[drinkName]}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-                ),
+                child:  Text('Reset all', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-            ),
-            if (_showCountControls[drinkName]!)
-              Row(
-                children: [
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _drinkCounts[drinkName] = _drinkCounts[drinkName]! + 1;
-                      });
-                    },
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: color,
-                  ),
-                ],
-              ),
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _drinkCounts[drinkName] = 0;
-                  _showCountControls[drinkName] = false;
-                });
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              child: const Text('RESET', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildCountControl(
+      String label,
+      int value,
+      bool showControls,
+      Color color,
+      Function(int) onValueChanged,
+      Function(bool) onShowControlsChanged,
+      ) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (showControls)
+              IconButton(
+                onPressed: () {
+                  if (value > 0) {
+                    onValueChanged(value - 1);
+                  }
+                  Future.delayed(const Duration(seconds: 5), () {
+                    onShowControlsChanged(false);
+                  });
+                },
+                icon: const Icon(Icons.remove_circle_outline, size: 20),
+                color: color,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            if (showControls) const SizedBox(width: 4),
+            GestureDetector(
+              onLongPress: () {
+                Future.delayed(const Duration(seconds: 2), () {
+                  onShowControlsChanged(!showControls);
+                  if (!showControls) {
+                    Future.delayed(const Duration(seconds: 5), () {
+                      onShowControlsChanged(false);
+                    });
+                  }
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withOpacity(0.3)),
+                ),
+                child: Text(
+                  '$value',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                ),
+              ),
+            ),
+            if (showControls) const SizedBox(width: 4),
+            if (showControls)
+              IconButton(
+                onPressed: () {
+                  onValueChanged(value + 1);
+                  Future.delayed(const Duration(seconds: 5), () {
+                    onShowControlsChanged(false);
+                  });
+                },
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                color: color,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildSpeedSettings() {
     return SingleChildScrollView(
@@ -1167,7 +2089,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               child: Slider(
                 value: value,
                 min: 50,
-                max: 1023,
+                max: 1000,
                 divisions: 973,
                 activeColor: color,
                 label: '${value.round()}',
@@ -1213,9 +2135,21 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                             keyboardType: TextInputType.number,
                             autofocus: true,
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              TextInputFormatter.withFunction((oldValue, newValue) {
+                                if (newValue.text.isEmpty) return newValue;
+
+                                final int value = int.parse(newValue.text);
+                                if (value > 1000) {
+                                  return oldValue; // block values > 1000
+                                }
+                                return newValue;
+                              }),
+                            ],
                             decoration: InputDecoration(
                               labelText: 'Speed Value',
-                              hintText: 'Enter value (50-1023)',
+                              hintText: 'Enter value (50-1000)',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -1229,7 +2163,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Valid range: 50 - 1023',
+                            'Valid range: 50 - 1000',
                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 24),
@@ -1256,7 +2190,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Please enter a valid value between 50 and 1023'),
+                                        content: Text('Please enter a valid value between 50 and 1000'),
                                         backgroundColor: Colors.red,
                                       ),
                                     );

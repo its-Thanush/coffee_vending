@@ -1036,8 +1036,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             imagePath: 'assets/images/light-latte-coffee.jpg'),
         ItemData('Black Coffee', 'c3', Colors.grey.shade900,
             imagePath: 'assets/images/black-americano-coffee.jpg'),
-        ItemData('Espresso', 'c4', Colors.brown.shade800,
-            imagePath: 'assets/images/strong-espresso-coffee.jpg'),
+
       ],
     );
   }
@@ -1054,6 +1053,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             imagePath: 'assets/images/light-milk-tea.jpg'),
         ItemData('Black Tea', 't3', Colors.grey.shade800,
             imagePath: 'assets/images/black-tea-cup.jpg'),
+        ItemData('Dip Tea', 't4', Colors.grey.shade800,
+            imagePath: 'assets/images/dip_tea.png'),
       ],
     );
   }
