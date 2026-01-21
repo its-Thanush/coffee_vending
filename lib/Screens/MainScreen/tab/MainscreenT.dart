@@ -545,6 +545,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
   void _startBrewing() {
+    _showBrewPopup();
     _sendBrewCommand();
 
     setState(() {
@@ -559,13 +560,33 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           bloc.isBrewAnimating = false;
           bloc.brewProgress = 0.0;
         });
-        _showBrewComplete();
+        // Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pop(context);
+          setState(() {
+            bloc.selectedItem = null;
+          });
+        // });
       } else {
         setState(() {
           bloc.brewProgress += 0.01;
         });
       }
     });
+  }
+
+  void stopBrewing() {
+    bloc.isBrewAnimating = false;
+    bloc.brewProgress = 0.0;
+  }
+
+
+  void _stopBrewing(Timer? timer) {
+    timer?.cancel();
+    setState(() {
+      bloc.isBrewAnimating = false;
+      bloc.brewProgress = 0.0;
+    });
+    Navigator.pop(context);
   }
 
   void _showBrewComplete() {
@@ -732,6 +753,244 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
 
+  void _showBrewPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.brown.shade400,
+                  Colors.brown.shade800,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.brown.withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Visibility(
+                  visible: !bloc.isBrewAnimating,
+                  replacement: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 20),
+                      StreamBuilder<void>(
+                        stream: Stream.periodic(const Duration(milliseconds: 30)),
+                        builder: (context, snapshot) {
+                          return Container(
+                            width: 220,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.brown.shade800,
+                                width: 3,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.brown.withOpacity(0.6),
+                                  blurRadius: 18,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 220,
+                                  height: 150,
+                                  color: Colors.transparent,
+                                ),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(13),
+                                  child: Stack(
+                                    children: [
+                                      Positioned(
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        child: Container(
+                                          height: 150 * bloc.brewProgress,
+                                          width: 220,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.brown.shade400,
+                                                Colors.brown.shade700,
+                                                Colors.brown.shade900,
+                                              ],
+                                            ),
+                                          ),
+                                          child: CustomPaint(
+                                            painter: WavePainter(bloc.brewProgress),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.coffee_maker,
+                                        size: 48,
+                                        color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'BREWING',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${(bloc.brewProgress * 100).toInt()}%',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Brewing in Progress',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Your beverage is being prepared',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () {
+                          stopBrewing();
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text(
+                          'Stop Brewing',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green.shade600,
+                          size: 64,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Brewing Complete!',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Your beverage is ready',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please collect it',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            bloc.selectedItem = null;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text(
+                          'OK',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
 
@@ -787,7 +1046,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
 
   Widget _buildBrewButton() {
-    const double size = 120; // 👈 reduced radius source
+    const double size = 120;
 
     return GestureDetector(
       onTap: bloc.isBrewAnimating ? null : _startBrewing,
@@ -799,15 +1058,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           boxShadow: [
             BoxShadow(
               color: Colors.brown.withOpacity(0.6),
-              blurRadius: 18,   // reduced
-              spreadRadius: 5,  // reduced
+              blurRadius: 18,
+              spreadRadius: 5,
             ),
           ],
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Background circle
             Container(
               width: size,
               height: size,
@@ -816,12 +1074,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                 color: Colors.white,
                 border: Border.all(
                   color: Colors.brown.shade800,
-                  width: 4, // slightly thinner
+                  width: 4,
                 ),
               ),
             ),
-
-            // Coffee filling animation
             ClipOval(
               child: Stack(
                 children: [
@@ -830,67 +1086,27 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                     height: size,
                     color: Colors.transparent,
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 30),
-                      height: size * bloc.brewProgress,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.brown.shade400,
-                            Colors.brown.shade700,
-                            Colors.brown.shade900,
-                          ],
-                        ),
-                      ),
-                      child: CustomPaint(
-                        painter: WavePainter(bloc.brewProgress),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
-
-            // Button content
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.coffee_maker,
-                  size: 40, // reduced
-                  color:
-                  bloc.isBrewAnimating ? Colors.white : Colors.brown.shade900,
+                  size: 40,
+                  color: Colors.brown.shade900,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  bloc.isBrewAnimating ? 'BREWING' : 'BREW',
+                  'BREW',
                   style: TextStyle(
-                    fontSize: 18, // reduced
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: bloc.isBrewAnimating
-                        ? Colors.white
-                        : Colors.brown.shade900,
+                    color: Colors.brown.shade900,
                     letterSpacing: 2,
                   ),
                 ),
-                if (bloc.isBrewAnimating)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '${(bloc.brewProgress * 100).toInt()}%',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],
@@ -898,7 +1114,6 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       ),
     );
   }
-
 
   Widget _buildHeader() {
     return Container(

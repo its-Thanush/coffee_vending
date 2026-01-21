@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class Adminpanel extends StatefulWidget {
-  const Adminpanel({super.key});
+  final String userType;
+  const Adminpanel({required this.userType,super.key});
 
   @override
   State<Adminpanel> createState() => _AdminpanelState();
@@ -13,6 +14,11 @@ class Adminpanel extends StatefulWidget {
 class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  bool _isCurrentVerified = false;
+
+  double _coffeOnTimeValue = 0.0;
+  double _teaOnTimeValue = 0.0;
+
 
   final Map<String, Map<String, int>> _delaySettings = {
     'strongCoffee': {'cpDelay': 0, 'cpOnTime': 0, 'milkDelay': 0, 'milkOnTime': 0, 'waterDelay': 0, 'waterOnTime': 0},
@@ -1020,24 +1026,62 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     Colors.brown,
                         (value) => setState(() => _coffeeTemp = value),
                   ),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        print('Coffee Temp Set: $_coffeeTemp°C');
-                      },
-                      child: const Text('Coffee Temp Set', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Text('On Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 20),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => _coffeOnTimeValue > 0 ? setState(() => _coffeOnTimeValue = (_coffeOnTimeValue - 0.1).clamp(0, 999.9)) : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                            color: Colors.brown,
+                          ),
+                          GestureDetector(
+                            onTap: () => _showDecimalInputDialog(
+                              'Enter Coffee On Time',
+                              _coffeOnTimeValue,
+                              Colors.brown,
+                              Icons.coffee,
+                                  (value) => setState(() => _coffeOnTimeValue = value),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.brown.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('${_coffeOnTimeValue.toStringAsFixed(1)} s',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.brown)),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => setState(() => _coffeOnTimeValue = (_coffeOnTimeValue + 0.1).clamp(0, 999.9)),
+                            icon: const Icon(Icons.add_circle_outline),
+                            color: Colors.brown,
+                          ),
+                        ],
+                      ),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Coffee Temp Set: $_coffeeTemp°C');
+                        },
+                        child: const Text('Brew Coffee', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
+                  const SizedBox(height: 16),
+
                   const Divider(height: 40),
                   _buildTemperatureSlider(
                     'Tea Brewing Temperature',
@@ -1046,6 +1090,45 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     Colors.green,
                         (value) => setState(() => _teaTemp = value),
                   ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Text('On Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 20),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => _teaOnTimeValue > 0 ? setState(() => _teaOnTimeValue = (_teaOnTimeValue - 0.1).clamp(0, 999.9)) : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                            color: Colors.green,
+                          ),
+                          GestureDetector(
+                            onTap: () => _showDecimalInputDialog(
+                              'Enter Tea On Time',
+                              _teaOnTimeValue,
+                              Colors.green,
+                              Icons.emoji_food_beverage,
+                                  (value) => setState(() => _teaOnTimeValue = value),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('${_teaOnTimeValue.toStringAsFixed(1)} s',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => setState(() => _teaOnTimeValue = (_teaOnTimeValue + 0.1).clamp(0, 999.9)),
+                            icon: const Icon(Icons.add_circle_outline),
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Align(
                     alignment: Alignment.centerRight,
@@ -1053,7 +1136,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       onPressed: () {
                         print('Tea Temp Set: $_teaTemp°C');
                       },
-                      child: const Text('Tea Temp Set', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text('Brew Tea', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -2317,6 +2400,37 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
+                  const SizedBox(height: 32),
+                  if (widget.userType == 'admin' || widget.userType == 'developer')
+                    Row(
+                      children: [
+                        SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: _showChangePasswordDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6B4423),
+                              padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 20),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Change Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: _showResetAllDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red[700],
+                              padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 20),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Reset All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -2348,4 +2462,277 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       ),
     );
   }
+
+  void _showChangePasswordDialog() {
+    final _currentPassController = TextEditingController();
+    final _newPassController = TextEditingController();
+    final _confirmPassController = TextEditingController();
+
+    bool _showCurrentPass = false;
+    bool _showNewPass = false;
+    bool _showConfirmPass = false;
+
+    bool _isVerified = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+
+              title: Row(
+                children: [
+                  Icon(Icons.lock, color: Color(0xFF6B4423), size: 28),
+                  SizedBox(width: 12),
+                  Text(
+                    'Change Password',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6B4423),
+                    ),
+                  ),
+                ],
+              ),
+
+              content: SizedBox(
+                width: 420, // ✅ WIDER DIALOG
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      /// CURRENT PASSWORD
+                      TextField(
+                        controller: _currentPassController,
+                        readOnly: _isVerified, // ✅ FIXED
+                        obscureText: !_showCurrentPass,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF6B4423)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showCurrentPass
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Color(0xFF6B4423),
+                            ),
+                            onPressed: () =>
+                                setDialogState(() => _showCurrentPass = !_showCurrentPass),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      /// VERIFY BUTTON (HIDDEN AFTER VERIFIED)
+                      if (!_isVerified)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            String currentPass = _currentPassController.text;
+
+                            bool isValid =
+                                (widget.userType == 'admin' &&
+                                    currentPass == '987654') ||
+                                    (widget.userType == 'developer' &&
+                                        currentPass == '3');
+
+                            if (isValid) {
+                              setDialogState(() {
+                                _currentPassController.text = 'verified';
+                                _isVerified = true; // ✅ HIDE BUTTON
+                              });
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password verified'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Invalid password'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.check),
+                          label: const Text('Verify'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF6B4423),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+
+                      /// NEW PASSWORD FIELDS (SHOW AFTER VERIFIED)
+                      if (_isVerified) ...[
+                        const SizedBox(height: 20),
+
+                        TextField(
+                          controller: _newPassController,
+                          obscureText: !_showNewPass,
+                          decoration: InputDecoration(
+                            labelText: 'New Password',
+                            prefixIcon:
+                            Icon(Icons.lock_outline, color: Color(0xFF6B4423)),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showNewPass
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Color(0xFF6B4423),
+                              ),
+                              onPressed: () =>
+                                  setDialogState(() => _showNewPass = !_showNewPass),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        TextField(
+                          controller: _confirmPassController,
+                          obscureText: !_showConfirmPass,
+                          decoration: InputDecoration(
+                            labelText: 'Re-enter New Password',
+                            prefixIcon:
+                            Icon(Icons.lock_outline, color: Color(0xFF6B4423)),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showConfirmPass
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Color(0xFF6B4423),
+                              ),
+                              onPressed: () => setDialogState(
+                                      () => _showConfirmPass = !_showConfirmPass),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      color: Color(0xFF6B4423),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                if (_isVerified)
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_newPassController.text ==
+                          _confirmPassController.text &&
+                          _newPassController.text.isNotEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Password changed successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        Navigator.pop(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Passwords do not match'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF6B4423),
+                    ),
+                    child: const Text('Submit',style: TextStyle(color: Colors.white,fontSize: 18),),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+  void _showResetAllDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 28),
+              const SizedBox(width: 12),
+              const Text('Reset All Data', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: const Text(
+                  'Are you sure you want to reset all data? This action cannot be undone.',
+                  style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 16)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('All data has been reset'), backgroundColor: Colors.red),
+                );
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Reset All', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }

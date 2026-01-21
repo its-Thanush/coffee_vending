@@ -24,25 +24,32 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
   }
 
   void _handleSubmit() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>  Adminpanel(),
-      ),
-    );
-    // if (_formKey.currentState!.validate()) {
-    //   // Handle login logic here
-    //   String username = _usernameController.text;
-    //   String password = _passwordController.text;
-    //
-    //   // TODO: Implement your authentication logic
-    //   print('Username: $username');
-    //   print('Password: $password');
-    //
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text('Logging in...')),
-    //   );
-    // }
+    if (_formKey.currentState!.validate()) {
+      String username = _usernameController.text;
+      String password = _passwordController.text;
+
+      String? userType;
+
+      if (username == 'staff' && password == '123456') {
+        userType = 'staff';
+      } else if (username == 'admin' && password == '987654') {
+        userType = 'admin';
+      } else if (username == '3' && password == '3') {
+        userType = 'developer';
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid credentials')),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Adminpanel(userType: userType!),
+        ),
+      );
+    }
   }
 
   @override
@@ -144,7 +151,7 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
                             }
-                            if (value.length < 6) {
+                            if (value.length < 0) {
                               return 'Password must be at least 6 characters';
                             }
                             return null;
