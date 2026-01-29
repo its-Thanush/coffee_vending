@@ -23,6 +23,8 @@ class VendingMachineScreen extends StatefulWidget {
 class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   late MainScreenBloc bloc;
+  Timer? _brewProgressTimer;
+  Timer? _brewTimer;
 
   @override
   void initState() {
@@ -70,6 +72,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   void dispose() {
     bloc.connectionCheckTimer?.cancel();
     bloc.timer.cancel();
+    _brewProgressTimer?.cancel();
+    _brewTimer?.cancel();
     super.dispose();
   }
 
@@ -545,6 +549,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
   void _startBrewing() {
+    _brewProgressTimer?.cancel();
     _showBrewPopup();
     _sendBrewCommand();
 
@@ -553,119 +558,37 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       bloc.brewProgress = 0.0;
     });
 
-    Timer.periodic(const Duration(milliseconds: 30), (timer) {
+    _brewProgressTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       if (bloc.brewProgress >= 1.0) {
         timer.cancel();
-        setState(() {
-          bloc.isBrewAnimating = false;
-          bloc.brewProgress = 0.0;
-        });
-        // Future.delayed(const Duration(seconds: 2), () {
-          Navigator.pop(context);
+        _brewProgressTimer = null;
+
+        if (mounted) {
+          setState(() {
+            bloc.isBrewAnimating = false;
+            bloc.brewProgress = 0.0;
+          });
+
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+
           setState(() {
             bloc.selectedItem = null;
           });
-        // });
+        }
       } else {
-        setState(() {
-          bloc.brewProgress += 0.01;
-        });
+        if (mounted) {
+          setState(() {
+            bloc.brewProgress += 0.01;
+          });
+        }
       }
-    });
-  }
-
-  void stopBrewing() {
-    bloc.isBrewAnimating = false;
-    bloc.brewProgress = 0.0;
-  }
-
-
-  void _stopBrewing(Timer? timer) {
-    timer?.cancel();
-    setState(() {
-      bloc.isBrewAnimating = false;
-      bloc.brewProgress = 0.0;
-    });
-    Navigator.pop(context);
-  }
-
-  void _showBrewComplete() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.brown.shade400,
-                Colors.brown.shade800,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.brown.withOpacity(0.5),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle,
-                  color: Colors.green.shade600,
-                  size: 64,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Brewing Complete!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Your beverage is ready',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please collect it',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    Future.delayed(const Duration(seconds:2), () {
-      Navigator.pop(context);
-      setState(() {
-        bloc.selectedItem = null;
-      });
     });
   }
 
@@ -752,13 +675,24 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   }
 
+  void stopBrewing() {
+    _brewProgressTimer?.cancel();
+    _brewProgressTimer = null;
+
+    if (mounted) {
+      setState(() {
+        bloc.isBrewAnimating = false;
+        bloc.brewProgress = 0.0;
+      });
+    }
+  }
 
   void _showBrewPopup() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Dialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
             padding: const EdgeInsets.all(24),
@@ -791,7 +725,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       const SizedBox(height: 20),
                       StreamBuilder<void>(
                         stream: Stream.periodic(const Duration(milliseconds: 30)),
-                        builder: (context, snapshot) {
+                        builder: (dialogContext, snapshot) {
                           return Container(
                             width: 220,
                             height: 150,
@@ -904,7 +838,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       ElevatedButton(
                         onPressed: () {
                           stopBrewing();
-                          Navigator.pop(context);
+                          if (Navigator.canPop(dialogContext)) {
+                            Navigator.pop(dialogContext);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[700],
@@ -963,7 +899,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          if (Navigator.canPop(dialogContext)) {
+                            Navigator.pop(dialogContext);
+                          }
                           setState(() {
                             bloc.selectedItem = null;
                           });

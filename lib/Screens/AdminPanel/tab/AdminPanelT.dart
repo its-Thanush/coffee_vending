@@ -143,7 +143,8 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    int tabCount = widget.userType == 'staff' ? 2 : 7;
+    _tabController = TabController(length: tabCount, vsync: this);
     _loadSettings();
   }
 
@@ -684,7 +685,12 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           unselectedLabelColor: Colors.white60,
           labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
-          tabs: const [
+          tabs: widget.userType == 'staff'
+              ? const [
+            Tab(icon: Icon(Icons.thermostat, size: 20), text: 'Brewing'),
+            Tab(icon: Icon(Icons.format_list_numbered, size: 20), text: 'Counts'),
+          ]
+              : const [
             Tab(icon: Icon(Icons.timer, size: 20), text: 'Delays'),
             Tab(icon: Icon(Icons.thermostat, size: 20), text: 'Brewing'),
             Tab(icon: Icon(Icons.cleaning_services, size: 20), text: 'Cleaning'),
@@ -697,7 +703,12 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
+        children: widget.userType == 'staff'
+            ? [
+          _buildBrewingSettings(),
+          _buildStaffCountsSettings(),
+        ]
+            : [
           _buildDelaySettings(),
           _buildBrewingSettings(),
           _buildCleaningSettings(),
@@ -2459,6 +2470,66 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStaffCountsSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ..._drinkCounts.keys.map((drink) => _buildStaffCountItem(drink)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffCountItem(String drinkName) {
+    IconData icon;
+    Color color;
+
+    if (drinkName.contains('Coffee')) {
+      icon = Icons.coffee;
+      color = Colors.brown;
+    } else if (drinkName.contains('Tea')) {
+      icon = Icons.emoji_food_beverage;
+      color = Colors.green;
+    } else if (drinkName.contains('Milk')) {
+      icon = Icons.water_drop;
+      color = Colors.blue;
+    } else {
+      icon = Icons.local_drink;
+      color = Colors.cyan;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(drinkName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withOpacity(0.3)),
+              ),
+              child: Text(
+                '${_drinkCounts[drinkName]!}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
