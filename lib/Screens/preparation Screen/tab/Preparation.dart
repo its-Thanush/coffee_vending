@@ -54,7 +54,7 @@ class _PreparationState extends State<Preparation> {
   }
 
   void _startTemperatureCheck() {
-    _checkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+    _checkTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       final temps = widget.getCurrentTemperatures(
         widget.coffeeTargetTemp,
         widget.teaTargetTemp,
@@ -164,7 +164,7 @@ class _PreparationState extends State<Preparation> {
                   CustomText(
                     text: 'GEMINI',
                     size: SizeConfig.bigText! * 2.2,
-                    color: const Color(0xFFE74C3C),
+                    color: destructiveColor,
                     weight: FontWeight.bold,
                     letterSpacing: 2.0,
                     fontFamily: 'Amaranth',
@@ -173,7 +173,7 @@ class _PreparationState extends State<Preparation> {
                   CustomText(
                     text: 'COFFEE',
                     size: SizeConfig.bigText! * 2.2,
-                    color: const Color(0xFFE74C3C),
+                    color: destructiveColor,
                     weight: FontWeight.bold,
                     letterSpacing: 2.0,
                     fontFamily: 'Amaranth',
@@ -198,23 +198,35 @@ class _PreparationState extends State<Preparation> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
+                    Container(
                       height: 17,
-                      child: LiquidLinearProgressIndicator(
-                        value: _currentProgress,
-                        valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFFF6B35),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6B4423).withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(
+                          color: const Color(0xFFFF6B35).withOpacity(0.6),
+                          width: 1.5,
                         ),
-                        backgroundColor: const Color(0xFF6B4423).withOpacity(0.3),
-                        borderColor: const Color(0xFFFF6B35).withOpacity(0.6),
-                        borderWidth: 1.5,
-                        borderRadius: 8.0,
-                        direction: Axis.horizontal,
-                        center: CustomText(
-                          text: '${(_currentProgress * 100).toInt()}%',
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.bold,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6.5),
+                        child: Stack(
+                          children: [
+                            FractionallySizedBox(
+                              widthFactor: _currentProgress,
+                              child: Container(
+                                color: const Color(0xFFFF6B35),
+                              ),
+                            ),
+                            Center(
+                              child: CustomText(
+                                text: '${(_currentProgress * 100).toInt()}%',
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

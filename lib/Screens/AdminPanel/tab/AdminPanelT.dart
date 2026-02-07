@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../../../helper/colors.dart';
+import '../../CleaningScreen/tab/CleaningScreen.dart';
+
 class Adminpanel extends StatefulWidget {
   final String userType;
   const Adminpanel({required this.userType,super.key});
@@ -129,6 +132,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   };
 
   String _companyName = '';
+  String CleanAll='';
   int _configDelay = 0;
 
   int _teaCleanDelay = 0;
@@ -136,14 +140,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   int _milkCleanDelay = 0;
 
 
-  double _teaPumpSpeed = 512.0;
-  double _coffeePumpSpeed = 512.0;
-  double _milkPumpSpeed = 512.0;
+  double _teaPumpSpeed = 120.0;
+  double _coffeePumpSpeed = 120.0;
+  double _milkPumpSpeed = 120.0;
 
   @override
   void initState() {
     super.initState();
-    int tabCount = widget.userType == 'staff' ? 2 : 7;
+    int tabCount = widget.userType == 'staff' ? 3 : 7;
     _tabController = TabController(length: tabCount, vsync: this);
     _loadSettings();
   }
@@ -384,6 +388,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     await prefs.setInt('count_hotWater', _jumpCounts['Hot Water']!);
 
     await prefs.setString('companyName', _companyName);
+    await prefs.setString('cleanAll', CleanAll);
     await prefs.setInt('configDelay', _configDelay);
 
     if (mounted) {
@@ -506,6 +511,137 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         onPressed: () {
                           Navigator.of(dialogContext).pop();
                           _saveSettings();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B6B47),
+                          foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: const Color(0xFF8B6B47).withOpacity(0.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'SUBMIT',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _CleanallConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFFFBF9F5),
+                  const Color(0xFFEDE7DD),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B6B47).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 48,
+                    color: Color(0xFF8B6B47),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Confirm Clean All',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3D3530),
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to Clean all settings ?',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF75675A),
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF75675A),
+                          side: const BorderSide(
+                            color: Color(0xFFE0D7C9),
+                            width: 2,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'CANCEL',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(dialogContext).pop();
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('cleanAll', '30');
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Cleaningscreen()),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B6B47),
@@ -798,21 +934,24 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: ElevatedButton.icon(
-                onPressed: () {
-                  _showSaveConfirmationDialog(context);
-                },
-                label: const Text('SAVE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF6B4423),
-                elevation: 4,
-                shadowColor: Colors.black45,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Visibility(
+            visible: widget.userType != 'staff',
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showSaveConfirmationDialog(context);
+                  },
+                  label: const Text('SAVE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF6B4423),
+                  elevation: 4,
+                  shadowColor: Colors.black45,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -830,6 +969,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
           tabs: widget.userType == 'staff'
               ? const [
             Tab(icon: Icon(Icons.thermostat, size: 20), text: 'Brewing'),
+            Tab(icon: Icon(Icons.cleaning_services, size: 20), text: 'Cleaning'),
             Tab(icon: Icon(Icons.format_list_numbered, size: 20), text: 'Counts'),
           ]
               : const [
@@ -847,13 +987,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
         controller: _tabController,
         children: widget.userType == 'staff'
             ? [
-          _buildBrewingSettings(),
+          _buildSTAFFBrewingSettings(),
+          _buildStaffCleaningSettings(context),
           _buildStaffCountsSettings(),
         ]
             : [
           _buildDelaySettings(),
           _buildBrewingSettings(),
-          _buildCleaningSettings(),
+          _buildCleaningSettings(context),
           _buildReverseSettings(),
           _buildCountsSettings(),
           _buildSpeedSettings(),
@@ -1309,6 +1450,101 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildSTAFFBrewingSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.coffee, color: Colors.brown, size: 24),
+                      SizedBox(width: 12),
+                      Text('Coffee Brewing Temperature', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.brown.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.brown.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          '${_coffeeTemp.round()}°C',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.brown),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Coffee Temp Set: $_coffeeTemp°C');
+                        },
+                        child: const Text('Brew Coffee', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 40),
+                  Row(
+                    children: [
+                      Icon(Icons.emoji_food_beverage, color: Colors.green, size: 24),
+                      SizedBox(width: 12),
+                      Text('Tea Brewing Temperature', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          '${_teaTemp.round()}°C',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Tea Temp Set:: $_teaTemp°C');
+                        },
+                        child: const Text('Brew Coffee', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTemperatureSlider(String label, double value, IconData icon, Color color, Function(double) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1352,7 +1588,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCleaningSettings() {
+  Widget _buildCleaningSettings(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1381,10 +1617,165 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               ),
             ),
           ),
+          SizedBox(height: 20,),
+          Align(
+            child: SizedBox(
+              width: 300,
+              child: ElevatedButton(
+                onPressed: () async {
+                  _CleanallConfirmationDialog(context);
+
+                  print('Cleaning all triggered');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: popoverForegroundColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                child: const Text(
+                  "CLEAN ALL",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  Widget _buildStaffCleaningSettings(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.emoji_food_beverage, color: Colors.green, size: 28),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text("Tea Cleaning", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      ),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Tea Clean triggered');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: Text("Clean Tea", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.coffee, color: Colors.brown, size: 28),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text("Coffee Cleaning", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      ),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Coffee Clean triggered');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: Text("Clean Coffee", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.water_drop, color: Colors.blue, size: 28),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text("Milk Cleaning", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      ),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Milk Clean triggered');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: Text("Clean Milk", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 20,),
+          Align(
+            child: SizedBox(
+              width: 300,
+              child: ElevatedButton(
+                onPressed: () async {
+                  _CleanallConfirmationDialog(context);
+
+                  print('Cleaning all triggered');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: popoverForegroundColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                child: const Text(
+                  "CLEAN ALL",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
     double delayDouble = delayValue / 10.0;
@@ -2064,7 +2455,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildInfoCard('Track beverage consumption counts. Long press to adjust, tap reset to clear.'),
+          _buildInfoCard('Track beverage consumption counts. tap reset to clear.'),
           const SizedBox(height: 16),
           ..._drinkCounts.keys.map((drink) => _buildCountItem(drink)).toList(),
         ],
@@ -2121,7 +2512,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               children: [
                 Expanded(
                   child: _buildCountControl(
-                    'Limit',
+                    'LC',
                     _limitCounts[drinkName]!,
                     _limitCountControls[drinkName]!,
                     color,
@@ -2132,7 +2523,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildCountControl(
-                    'Jump',
+                    'JC',
                     _jumpCounts[drinkName]!,
                     _jumpCountControls[drinkName]!,
                     color,
@@ -2143,7 +2534,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildCountControl(
-                    'Actual',
+                    'AC',
                     _drinkCounts[drinkName]!,
                     _showCountControls[drinkName]!,
                     color,
@@ -2264,7 +2655,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildInfoCard('Configure motor speed for each pump (50-1023 PWM value).'),
+          _buildInfoCard('Configure motor speed for each pump.'),
           const SizedBox(height: 16),
           Card(
             elevation: 2,
@@ -2324,8 +2715,8 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
             Expanded(
               child: Slider(
                 value: value,
-                min: 50,
-                max: 1000,
+                min: 100,
+                max: 250,
                 divisions: 973,
                 activeColor: color,
                 label: '${value.round()}',
@@ -2377,7 +2768,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                                 if (newValue.text.isEmpty) return newValue;
 
                                 final int value = int.parse(newValue.text);
-                                if (value > 1000) {
+                                if (value > 250) {
                                   return oldValue; // block values > 1000
                                 }
                                 return newValue;
@@ -2385,7 +2776,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                             ],
                             decoration: InputDecoration(
                               labelText: 'Speed Value',
-                              hintText: 'Enter value (50-1000)',
+                              hintText: 'Enter value (100 -250)',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -2399,7 +2790,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Valid range: 50 - 1000',
+                            'Valid range: 100 - 250',
                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 24),
@@ -2420,13 +2811,13 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                               ElevatedButton(
                                 onPressed: () {
                                   int? newValue = int.tryParse(controller.text);
-                                  if (newValue != null && newValue >= 50 && newValue <= 1023) {
+                                  if (newValue != null && newValue >= 100 && newValue <= 250) {
                                     onChanged(newValue.toDouble());
                                     Navigator.pop(context);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Please enter a valid value between 50 and 1000'),
+                                        content: Text('Please enter a valid value between 100 and 250'),
                                         backgroundColor: Colors.red,
                                       ),
                                     );
@@ -2916,7 +3307,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                   border: Border.all(color: Colors.red.withOpacity(0.3)),
                 ),
                 child: const Text(
-                  'Are you sure you want to reset all data? This action cannot be undone.',
+                  'Are you sure you want to reset all data ? This action cannot be undone.',
                   style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
                   textAlign: TextAlign.center,
                 ),

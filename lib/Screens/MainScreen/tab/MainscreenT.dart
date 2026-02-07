@@ -8,6 +8,7 @@ import 'package:coffee_vending/helper/customtext.dart';
 import 'package:coffee_vending/model/ItemDataModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -687,7 +688,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     }
   }
 
-  void _showBrewPopup() {
+  void _showBrewPopup() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String drinkName = bloc.selectedItem ?? 'Unknown';
+    int currentCount = prefs.getInt('${drinkName}_count') ?? 0;
+    await prefs.setInt('${drinkName}_count', currentCount + 1);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -928,6 +934,247 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     );
   }
 
+  // void _showBrewPopup() {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (dialogContext) => StatefulBuilder(
+  //       builder: (dialogContext, setDialogState) => Dialog(
+  //         backgroundColor: Colors.transparent,
+  //         child: Container(
+  //           padding: const EdgeInsets.all(24),
+  //           decoration: BoxDecoration(
+  //             gradient: LinearGradient(
+  //               begin: Alignment.topLeft,
+  //               end: Alignment.bottomRight,
+  //               colors: [
+  //                 Colors.brown.shade400,
+  //                 Colors.brown.shade800,
+  //               ],
+  //             ),
+  //             borderRadius: BorderRadius.circular(24),
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.brown.withOpacity(0.5),
+  //                 blurRadius: 20,
+  //                 spreadRadius: 5,
+  //               ),
+  //             ],
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Visibility(
+  //                 visible: !bloc.isBrewAnimating,
+  //                 replacement: Column(
+  //                   mainAxisSize: MainAxisSize.min,
+  //                   children: [
+  //                     const SizedBox(height: 20),
+  //                     StreamBuilder<void>(
+  //                       stream: Stream.periodic(const Duration(milliseconds: 30)),
+  //                       builder: (dialogContext, snapshot) {
+  //                         return Container(
+  //                           width: 220,
+  //                           height: 150,
+  //                           decoration: BoxDecoration(
+  //                             border: Border.all(
+  //                               color: Colors.brown.shade800,
+  //                               width: 3,
+  //                             ),
+  //                             borderRadius: BorderRadius.circular(16),
+  //                             color: Colors.white,
+  //                             boxShadow: [
+  //                               BoxShadow(
+  //                                 color: Colors.brown.withOpacity(0.6),
+  //                                 blurRadius: 18,
+  //                                 spreadRadius: 5,
+  //                               ),
+  //                             ],
+  //                           ),
+  //                           child: Stack(
+  //                             children: [
+  //                               Container(
+  //                                 width: 220,
+  //                                 height: 150,
+  //                                 color: Colors.transparent,
+  //                               ),
+  //                               ClipRRect(
+  //                                 borderRadius: BorderRadius.circular(13),
+  //                                 child: Stack(
+  //                                   children: [
+  //                                     Positioned(
+  //                                       bottom: 0,
+  //                                       left: 0,
+  //                                       right: 0,
+  //                                       child: Container(
+  //                                         height: 150 * bloc.brewProgress,
+  //                                         width: 220,
+  //                                         decoration: BoxDecoration(
+  //                                           gradient: LinearGradient(
+  //                                             begin: Alignment.topCenter,
+  //                                             end: Alignment.bottomCenter,
+  //                                             colors: [
+  //                                               Colors.brown.shade400,
+  //                                               Colors.brown.shade700,
+  //                                               Colors.brown.shade900,
+  //                                             ],
+  //                                           ),
+  //                                         ),
+  //                                         child: CustomPaint(
+  //                                           painter: WavePainter(bloc.brewProgress),
+  //                                         ),
+  //                                       ),
+  //                                     ),
+  //                                   ],
+  //                                 ),
+  //                               ),
+  //                               Center(
+  //                                 child: Column(
+  //                                   mainAxisAlignment: MainAxisAlignment.center,
+  //                                   children: [
+  //                                     Icon(
+  //                                       Icons.coffee_maker,
+  //                                       size: 48,
+  //                                       color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+  //                                     ),
+  //                                     const SizedBox(height: 12),
+  //                                     Text(
+  //                                       'BREWING',
+  //                                       style: TextStyle(
+  //                                         fontSize: 20,
+  //                                         fontWeight: FontWeight.bold,
+  //                                         color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+  //                                         letterSpacing: 2,
+  //                                       ),
+  //                                     ),
+  //                                     const SizedBox(height: 6),
+  //                                     Text(
+  //                                       '${(bloc.brewProgress * 100).toInt()}%',
+  //                                       style: TextStyle(
+  //                                         fontSize: 16,
+  //                                         fontWeight: FontWeight.bold,
+  //                                         color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+  //                                       ),
+  //                                     ),
+  //                                   ],
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         );
+  //                       },
+  //                     ),
+  //                     const SizedBox(height: 28),
+  //                     const Text(
+  //                       'Brewing in Progress',
+  //                       style: TextStyle(
+  //                         fontSize: 24,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Colors.white,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 12),
+  //                     const Text(
+  //                       'Your beverage is being prepared',
+  //                       style: TextStyle(
+  //                         fontSize: 16,
+  //                         color: Colors.white70,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 32),
+  //                     ElevatedButton(
+  //                       onPressed: () {
+  //                         stopBrewing();
+  //                         if (Navigator.canPop(dialogContext)) {
+  //                           Navigator.pop(dialogContext);
+  //                         }
+  //                       },
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: Colors.red[700],
+  //                         foregroundColor: Colors.white,
+  //                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+  //                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //                       ),
+  //                       child: const Text(
+  //                         'Stop Brewing',
+  //                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 20),
+  //                   ],
+  //                 ),
+  //                 child: Column(
+  //                   mainAxisSize: MainAxisSize.min,
+  //                   children: [
+  //                     Container(
+  //                       padding: const EdgeInsets.all(16),
+  //                       decoration: BoxDecoration(
+  //                         color: Colors.white,
+  //                         shape: BoxShape.circle,
+  //                       ),
+  //                       child: Icon(
+  //                         Icons.check_circle,
+  //                         color: Colors.green.shade600,
+  //                         size: 64,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 20),
+  //                     const Text(
+  //                       'Brewing Complete!',
+  //                       style: TextStyle(
+  //                         fontSize: 28,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Colors.white,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 12),
+  //                     const Text(
+  //                       'Your beverage is ready',
+  //                       style: TextStyle(
+  //                         fontSize: 18,
+  //                         color: Colors.white,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     const Text(
+  //                       'Please collect it',
+  //                       style: TextStyle(
+  //                         fontSize: 16,
+  //                         color: Colors.white70,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 24),
+  //                     ElevatedButton(
+  //                       onPressed: () {
+  //                         if (Navigator.canPop(dialogContext)) {
+  //                           Navigator.pop(dialogContext);
+  //                         }
+  //                         setState(() {
+  //                           bloc.selectedItem = null;
+  //                         });
+  //                       },
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: Colors.green[600],
+  //                         foregroundColor: Colors.white,
+  //                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+  //                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //                       ),
+  //                       child: const Text(
+  //                         'OK',
+  //                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1073,7 +1320,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(bloc.companyName,
+              Text(bloc.companyName.isEmpty?"Gemini Coffee":bloc.companyName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1093,7 +1340,6 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              SizedBox(height: 10),
               Row(
                 children: [
                   Text(
@@ -1106,7 +1352,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   ),
                   SizedBox(width: 10,),
                   Text(
-                   "70° C",
+                    "70° C",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1133,44 +1379,62 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   ),
                 ],
               ),
-      Row(
-        children: [
-          // Status Circle
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
-              boxShadow: [
-                BoxShadow(
-                  color: (bloc.isNodeMCUOnline ? Colors.green : Colors.red)
-                      .withOpacity(0.5),
-                  blurRadius: 6,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(width: 7),
-
-          // Admin Button
-          IconButton(
-            splashRadius: 3,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => adminScreenLogin(),
-                ),
-              );
-            },
-            icon: Icon(Icons.admin_panel_settings, color: Colors.brown.shade900),
-          ),
-        ],
-      ),
-      ],
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.brown.withOpacity(0.1),
+                      border: Border.all(color: Colors.brown),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 7,vertical: 5),
+                    child: CustomText(text: "Coffee Brewing",weight: FontWeight.w400,color: Colors.brown,),
+                  ),
+                  Gap(10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      border: Border.all(color: Colors.green),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 7,vertical: 5),
+                    child: CustomText(text: "Tea Brewing",weight: FontWeight.w400,color: Colors.green,),
+                  ),
+                  SizedBox(width: 10),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (bloc.isNodeMCUOnline ? Colors.green : Colors
+                              .red)
+                              .withOpacity(0.5),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(10),
+                  IconButton(
+                    splashRadius: 3,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => adminScreenLogin(),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.admin_panel_settings,
+                        color: Colors.brown.shade900),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
