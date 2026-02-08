@@ -78,6 +78,28 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     super.dispose();
   }
 
+  int _calculateBrewTime(String drinkKey) {
+    final settings = bloc.delaySettings[drinkKey];
+    if (settings == null) {
+      print("Settings for $drinkKey is NULL");
+      return 0;
+    }
+
+    int total = 0;
+    settings.forEach((key, value) {
+      print("$drinkKey - $key: $value");
+      total += value;
+    });
+    print("Total brew time for $drinkKey: $total seconds");
+    return total;
+  }
+
+  Future<void> _incrementDrinkCount(String drinkName) async {
+    final prefs = await SharedPreferences.getInstance();
+    int currentCount = prefs.getInt('${drinkName}_count') ?? 0;
+    await prefs.setInt('${drinkName}_count', currentCount + 1);
+  }
+
   String _formatDate(DateTime date) {
     final days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     final months = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -549,7 +571,55 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Hot Water Sequence Complete");
   }
 
-  void _startBrewing() {
+  void _startBrewing() async {
+    if (bloc.selectedItem == null || bloc.isBrewAnimating) return;
+
+    String drinkKey = '';
+    String drinkName = '';
+
+    switch(bloc.selectedItem) {
+      case 'c1':
+        drinkKey = 'strongCoffee';
+        drinkName = 'Strong Coffee';
+        break;
+      case 'c2':
+        drinkKey = 'liteCoffee';
+        drinkName = 'Lite Coffee';
+        break;
+      case 'c3':
+        drinkKey = 'blackCoffee';
+        drinkName = 'Black Coffee';
+        break;
+      case 't1':
+        drinkKey = 'strongTea';
+        drinkName = 'Strong Tea';
+        break;
+      case 't2':
+        drinkKey = 'liteTea';
+        drinkName = 'Lite Tea';
+        break;
+      case 't3':
+        drinkKey = 'blackTea';
+        drinkName = 'Black Tea';
+        break;
+      case 't4':
+        drinkKey = 'dipTea';
+        drinkName = 'Dip Tea';
+        break;
+      case 'e1':
+        drinkKey = 'hotMilk';
+        drinkName = 'Hot Milk';
+        break;
+      case 'e2':
+        drinkKey = 'hotWater';
+        drinkName = 'Hot Water';
+        break;
+    }
+
+    int brewSeconds = _calculateBrewTime(drinkKey);
+
+    print("Calculated brew time: $brewSeconds seconds");
+
     _brewProgressTimer?.cancel();
     _showBrewPopup();
     _sendBrewCommand();
@@ -559,9 +629,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       bloc.brewProgress = 0.0;
     });
 
+    double incrementPerTick = 1.0 / (brewSeconds * 33.33);
+
     _brewProgressTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       if (!mounted) {
         timer.cancel();
+        _brewProgressTimer = null;
         return;
       }
 
@@ -570,23 +643,28 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         _brewProgressTimer = null;
 
         if (mounted) {
+          _incrementDrinkCount(drinkName);
           setState(() {
             bloc.isBrewAnimating = false;
             bloc.brewProgress = 0.0;
           });
 
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
-
-          setState(() {
-            bloc.selectedItem = null;
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && Navigator.canPop(context)) {
+              Navigator.pop(context);
+              setState(() {
+                bloc.selectedItem = null;
+              });
+            }
           });
         }
       } else {
         if (mounted) {
           setState(() {
-            bloc.brewProgress += 0.01;
+            bloc.brewProgress += incrementPerTick;
+            if (bloc.brewProgress > 1.0) {
+              bloc.brewProgress = 1.0;
+            }
           });
         }
       }
@@ -599,101 +677,88 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     bloc.companyName = prefs.getString('companyName') ?? '';
 
     bloc.delaySettings['strongCoffee'] = {
-      'cpDelay': prefs.getInt('strongCoffee_cpDelay') ?? 0,
-      'cpOnTime': prefs.getInt('strongCoffee_cpOnTime') ?? 0,
-      'milkDelay': prefs.getInt('strongCoffee_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('strongCoffee_milkOnTime') ?? 0,
-      'waterDelay': prefs.getInt('strongCoffee_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('strongCoffee_waterOnTime') ?? 0,
+      'cpDelay': (prefs.getInt('strongCoffee_cpDelay') ?? 0) ~/ 10,
+      'cpOnTime': (prefs.getInt('strongCoffee_cpOnTime') ?? 0) ~/ 10,
+      'milkDelay': (prefs.getInt('strongCoffee_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('strongCoffee_milkOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('strongCoffee_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('strongCoffee_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['liteCoffee'] = {
-      'cpDelay': prefs.getInt('liteCoffee_cpDelay') ?? 0,
-      'cpOnTime': prefs.getInt('liteCoffee_cpOnTime') ?? 0,
-      'milkDelay': prefs.getInt('liteCoffee_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('liteCoffee_milkOnTime') ?? 0,
-      'waterDelay': prefs.getInt('liteCoffee_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('liteCoffee_waterOnTime') ?? 0,
+      'cpDelay': (prefs.getInt('liteCoffee_cpDelay') ?? 0) ~/ 10,
+      'cpOnTime': (prefs.getInt('liteCoffee_cpOnTime') ?? 0) ~/ 10,
+      'milkDelay': (prefs.getInt('liteCoffee_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('liteCoffee_milkOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('liteCoffee_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('liteCoffee_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['blackCoffee'] = {
-      'ctpDelay': prefs.getInt('blackCoffee_ctpDelay') ?? 0,
-      'ctpOnTime': prefs.getInt('blackCoffee_ctpOnTime') ?? 0,
-      'waterDelay': prefs.getInt('blackCoffee_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('blackCoffee_waterOnTime') ?? 0,
+      'ctpDelay': (prefs.getInt('blackCoffee_ctpDelay') ?? 0) ~/ 10,
+      'ctpOnTime': (prefs.getInt('blackCoffee_ctpOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('blackCoffee_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('blackCoffee_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['strongTea'] = {
-      'ttpDelay': prefs.getInt('strongTea_ttpDelay') ?? 0,
-      'ttpOnTime': prefs.getInt('strongTea_ttpOnTime') ?? 0,
-      'milkDelay': prefs.getInt('strongTea_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('strongTea_milkOnTime') ?? 0,
-      'waterDelay': prefs.getInt('strongTea_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('strongTea_waterOnTime') ?? 0,
+      'ttpDelay': (prefs.getInt('strongTea_ttpDelay') ?? 0) ~/ 10,
+      'ttpOnTime': (prefs.getInt('strongTea_ttpOnTime') ?? 0) ~/ 10,
+      'milkDelay': (prefs.getInt('strongTea_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('strongTea_milkOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('strongTea_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('strongTea_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['liteTea'] = {
-      'ttpDelay': prefs.getInt('liteTea_ttpDelay') ?? 0,
-      'ttpOnTime': prefs.getInt('liteTea_ttpOnTime') ?? 0,
-      'milkDelay': prefs.getInt('liteTea_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('liteTea_milkOnTime') ?? 0,
-      'waterDelay': prefs.getInt('liteTea_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('liteTea_waterOnTime') ?? 0,
+      'ttpDelay': (prefs.getInt('liteTea_ttpDelay') ?? 0) ~/ 10,
+      'ttpOnTime': (prefs.getInt('liteTea_ttpOnTime') ?? 0) ~/ 10,
+      'milkDelay': (prefs.getInt('liteTea_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('liteTea_milkOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('liteTea_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('liteTea_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['blackTea'] = {
-      'ttpDelay': prefs.getInt('blackTea_ttpDelay') ?? 0,
-      'ttpOnTime': prefs.getInt('blackTea_ttpOnTime') ?? 0,
-      'waterDelay': prefs.getInt('blackTea_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('blackTea_waterOnTime') ?? 0,
+      'ttpDelay': (prefs.getInt('blackTea_ttpDelay') ?? 0) ~/ 10,
+      'ttpOnTime': (prefs.getInt('blackTea_ttpOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('blackTea_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('blackTea_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['dipTea'] = {
-      'waterDelay': prefs.getInt('dipTea_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('dipTea_waterOnTime') ?? 0,
-      'milkDelay': prefs.getInt('dipTea_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('dipTea_milkOnTime') ?? 0,
+      'waterDelay': (prefs.getInt('dipTea_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('dipTea_waterOnTime') ?? 0) ~/ 10,
+      'milkDelay': (prefs.getInt('dipTea_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('dipTea_milkOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['hotMilk'] = {
-      'milkDelay': prefs.getInt('hotMilk_milkDelay') ?? 0,
-      'milkOnTime': prefs.getInt('hotMilk_milkOnTime') ?? 0,
-      'waterDelay': prefs.getInt('hotMilk_waterDelay') ?? 0,
-      'waterOnTime': prefs.getInt('hotMilk_waterOnTime') ?? 0,
+      'milkDelay': (prefs.getInt('hotMilk_milkDelay') ?? 0) ~/ 10,
+      'milkOnTime': (prefs.getInt('hotMilk_milkOnTime') ?? 0) ~/ 10,
+      'waterDelay': (prefs.getInt('hotMilk_waterDelay') ?? 0) ~/ 10,
+      'waterOnTime': (prefs.getInt('hotMilk_waterOnTime') ?? 0) ~/ 10,
     };
 
     bloc.delaySettings['hotWater'] = {
-      'waterValveDelay': prefs.getInt('hotWater_waterValveDelay') ?? 0,
-      'waterValveOnTime': prefs.getInt('hotWater_waterValveOnTime') ?? 0,
+      'waterValveDelay': (prefs.getInt('hotWater_waterValveDelay') ?? 0) ~/ 10,
+      'waterValveOnTime': (prefs.getInt('hotWater_waterValveOnTime') ?? 0) ~/ 10,
     };
 
-
-
     print("strongCoffee cpDelay = ${bloc.delaySettings['strongCoffee']?['cpDelay']}");
-
-
     print("--------_companyName---------->"+bloc.companyName);
-
   }
 
   void stopBrewing() {
+    _brewTimer?.cancel();
     _brewProgressTimer?.cancel();
-    _brewProgressTimer = null;
-
-    if (mounted) {
-      setState(() {
-        bloc.isBrewAnimating = false;
-        bloc.brewProgress = 0.0;
-      });
-    }
+    setState(() {
+      bloc.isBrewAnimating = false;
+      bloc.brewProgress = 0.0;
+    });
   }
 
   void _showBrewPopup() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String drinkName = bloc.selectedItem ?? 'Unknown';
-    int currentCount = prefs.getInt('${drinkName}_count') ?? 0;
-    await prefs.setInt('${drinkName}_count', currentCount + 1);
-
     showDialog(
       context: context,
       barrierDismissible: false,

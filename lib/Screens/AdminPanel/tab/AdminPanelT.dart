@@ -145,11 +145,18 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   double _milkPumpSpeed = 120.0;
 
   @override
+
   void initState() {
     super.initState();
     int tabCount = widget.userType == 'staff' ? 3 : 7;
     _tabController = TabController(length: tabCount, vsync: this);
     _loadSettings();
+
+    _tabController.addListener(() {
+      if (_tabController.index == (widget.userType == 'staff' ? 2 : 2)) {
+        _loadSettings();
+      }
+    });
   }
 
   @override
@@ -162,6 +169,16 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
+      _drinkCounts['Strong Coffee'] = prefs.getInt('Strong Coffee_count') ?? 0;
+      _drinkCounts['Lite Coffee'] = prefs.getInt('Lite Coffee_count') ?? 0;
+      _drinkCounts['Black Coffee'] = prefs.getInt('Black Coffee_count') ?? 0;
+      _drinkCounts['Strong Tea'] = prefs.getInt('Strong Tea_count') ?? 0;
+      _drinkCounts['Lite Tea'] = prefs.getInt('Lite Tea_count') ?? 0;
+      _drinkCounts['Black Tea'] = prefs.getInt('Black Tea_count') ?? 0;
+      _drinkCounts['Dip Tea'] = prefs.getInt('Dip Tea_count') ?? 0;
+      _drinkCounts['Hot Milk'] = prefs.getInt('Hot Milk_count') ?? 0;
+      _drinkCounts['Hot Water'] = prefs.getInt('Hot Water_count') ?? 0;
+
       _delaySettings['strongCoffee'] = {
         'cpDelay': prefs.getInt('strongCoffee_cpDelay') ?? 0,
         'cpOnTime': prefs.getInt('strongCoffee_cpOnTime') ?? 0,
@@ -245,40 +262,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       _milkPump = prefs.getInt('milkPump') ?? 5;
       _teaPump = prefs.getInt('teaPump') ?? 5;
       _coffeePump = prefs.getInt('coffeePump') ?? 5;
-
-      _drinkCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
-      _drinkCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
-      _drinkCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
-      _drinkCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
-      _drinkCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
-      _drinkCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
-      _drinkCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
-      _drinkCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
-      _drinkCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
-
-      _limitCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
-      _limitCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
-      _limitCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
-      _limitCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
-      _limitCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
-      _limitCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
-      _limitCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
-      _limitCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
-      _limitCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
-
-      _jumpCounts['Strong Coffee'] = prefs.getInt('count_strongCoffee') ?? 0;
-      _jumpCounts['Lite Coffee'] = prefs.getInt('count_liteCoffee') ?? 0;
-      _jumpCounts['Black Coffee'] = prefs.getInt('count_blackCoffee') ?? 0;
-      _jumpCounts['Strong Tea'] = prefs.getInt('count_strongTea') ?? 0;
-      _jumpCounts['Lite Tea'] = prefs.getInt('count_liteTea') ?? 0;
-      _jumpCounts['Black Tea'] = prefs.getInt('count_blackTea') ?? 0;
-      _jumpCounts['Dip Tea'] = prefs.getInt('count_dipTea') ?? 0;
-      _jumpCounts['Hot Milk'] = prefs.getInt('count_hotMilk') ?? 0;
-      _jumpCounts['Hot Water'] = prefs.getInt('count_hotWater') ?? 0;
-
-
-
-
 
       _companyName = prefs.getString('companyName') ?? '';
       _configDelay = prefs.getInt('configDelay') ?? 0;
@@ -786,7 +769,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       ),
     );
   }
-
 
   void _showDecimalInputDialog(
       String title,
