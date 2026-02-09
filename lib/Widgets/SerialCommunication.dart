@@ -1,6 +1,7 @@
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async';
 
 class SerialService {
   static final SerialService _instance = SerialService._internal();
@@ -10,8 +11,10 @@ class SerialService {
   UsbPort? _port;
   bool isConnected = false;
   Function(bool)? onConnectionChanged;
+  Function(String)? onTempReceived;
+  StreamSubscription<Uint8List>? _subscription;
+  String _buffer = '';
 
-  // Connect to device
   Future<bool> connect() async {
     try {
       List<UsbDevice> devices = await UsbSerial.listDevices();
@@ -55,6 +58,8 @@ class SerialService {
       print("Connected successfully!");
       await Future.delayed(Duration(milliseconds: 500));
 
+      _startListening();
+
       isConnected = true;
       onConnectionChanged?.call(true);
       return true;
@@ -66,7 +71,33 @@ class SerialService {
     }
   }
 
-  // Send data to NodeMCU
+  void _startListening() {
+    _subscription = _port!.inputStream?.listen((Uint8List data) {
+      _buffer += String.fromCharCodes(data);
+
+      int newlineIndex;
+      while ((newlineIndex = _buffer.indexOf('\n')) != -1) {
+        String line = _buffer.substring(0, newlineIndex).trim();
+        _buffer = _buffer.substring(newlineIndex + 1);
+
+        if (line.isNotEmpty) {
+          _processReceivedData(line);
+        }
+      }
+    });
+  }
+
+  void _processReceivedData(String data) {
+    try {
+      final jsonData = json.decode(data);
+      if (jsonData['temp'] != null) {
+        onTempReceived?.call(jsonData['temp'].toString());
+      }
+    } catch (e) {
+      print("Error parsing JSON: $e");
+    }
+  }
+
   Future<void> sendData(String data) async {
     if (_port == null) {
       print("Port not connected");
@@ -84,7 +115,6 @@ class SerialService {
     }
   }
 
-  // Send JSON data
   Future<void> sendJsonData(Map<String, dynamic> data) async {
     if (_port == null) {
       print("Port not connected");
@@ -103,7 +133,6 @@ class SerialService {
     }
   }
 
-  // Check connection status
   Future<bool> checkConnection() async {
     try {
       List<UsbDevice> devices = await UsbSerial.listDevices();
@@ -131,9 +160,9 @@ class SerialService {
     }
   }
 
-  // Disconnect
   Future<void> disconnect() async {
     try {
+      await _subscription?.cancel();
       await _port?.close();
       _port = null;
       isConnected = false;

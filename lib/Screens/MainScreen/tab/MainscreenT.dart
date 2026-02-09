@@ -27,6 +27,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Timer? _brewProgressTimer;
   Timer? _brewTimer;
 
+  double _coffeePumpSpeed = 120.0;
+  double _teaPumpSpeed = 120.0;
+  double _milkPumpSpeed = 120.0;
+
+  String _currentTemp = "--";
+  bool _tempError = false;
+  Timer? _tempTimeoutTimer;
+
   @override
   void initState() {
     super.initState();
@@ -46,9 +54,19 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       });
     };
 
+    bloc.serialService.onTempReceived = (String temp) {
+      setState(() {
+        _currentTemp = temp;
+        _tempError = false;
+      });
+      _resetTempTimeout();
+    };
+
     bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       _checkNodeMCUConnection();
     });
+
+    _startTempTimeout();
 
   }
 
@@ -69,12 +87,28 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     }
   }
 
+  void _startTempTimeout() {
+    _tempTimeoutTimer?.cancel();
+    _tempTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      setState(() {
+        _tempError = true;
+        _currentTemp = "Error";
+      });
+    });
+  }
+
+  void _resetTempTimeout() {
+    _tempTimeoutTimer?.cancel();
+    _startTempTimeout();
+  }
+
   @override
   void dispose() {
     bloc.connectionCheckTimer?.cancel();
     bloc.timer.cancel();
     _brewProgressTimer?.cancel();
     _brewTimer?.cancel();
+    _tempTimeoutTimer?.cancel();
     super.dispose();
   }
 
@@ -162,8 +196,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: cpDelay));
     print("cpDelay complete");
 
-    print("Sending Coffee Pump ON: {CP_FWD: 1023, CP_REV: 0}");
-    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+    print("Sending Coffee Pump ON: {CP_FWD: ${_coffeePumpSpeed.toInt()}, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "CP_FWD": "${_coffeePumpSpeed.toInt()}",
+      "CP_REV": "0"
+    });
 
     print("Waiting cpOnTime: $cpOnTime seconds");
     await Future.delayed(Duration(seconds: cpOnTime));
@@ -176,8 +213,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -220,8 +261,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: cpDelay));
     print("cpDelay complete");
 
-    print("Sending Coffee Pump ON: {CP_FWD: 1023, CP_REV: 0}");
-    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+    print("Sending Coffee Pump ON: {CP_FWD: ${_coffeePumpSpeed.toInt()}, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "CP_FWD": "${_coffeePumpSpeed.toInt()}",
+      "CP_REV": "0"
+    });
 
     print("Waiting cpOnTime: $cpOnTime seconds");
     await Future.delayed(Duration(seconds: cpOnTime));
@@ -234,8 +278,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -276,8 +324,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: ctpDelay));
     print("ctpDelay complete");
 
-    print("Sending Coffee Tea Pump ON: {CP_FWD: 1023, CP_REV: 0}");
-    await bloc.serialService.sendJsonData({"CP_FWD": "1023", "CP_REV": "0"});
+    print("Sending Coffee Tea Pump ON: {CP_FWD: ${_coffeePumpSpeed.toInt()}, CP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "CP_FWD": "${_coffeePumpSpeed.toInt()}",
+      "CP_REV": "0"
+    });
 
     print("Waiting ctpOnTime: $ctpOnTime seconds");
     await Future.delayed(Duration(seconds: ctpOnTime));
@@ -320,8 +371,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: ttpDelay));
     print("ttpDelay complete");
 
-    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
-    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+    print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TTP_REV": "0"
+    });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
     await Future.delayed(Duration(seconds: ttpOnTime));
@@ -334,8 +388,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -378,8 +436,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: ttpDelay));
     print("ttpDelay complete");
 
-    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
-    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+    print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TTP_REV": "0"
+    });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
     await Future.delayed(Duration(seconds: ttpOnTime));
@@ -392,8 +453,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -434,8 +499,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: ttpDelay));
     print("ttpDelay complete");
 
-    print("Sending Tea Pump ON: {TP_FWD: 1023, TP_REV: 0}");
-    await bloc.serialService.sendJsonData({"TP_FWD": "1023", "TP_REV": "0"});
+    print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TTP_REV": "0"
+    });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
     await Future.delayed(Duration(seconds: ttpOnTime));
@@ -490,8 +558,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -518,8 +590,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: milkDelay));
     print("milkDelay complete");
 
-    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: 1023, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "1", "MP_FWD": "1023", "MP_REV": "0"});
+    print("Sending Milk Pump ON: {MAV: 1, MP_FWD: ${_milkPumpSpeed.toInt()}, MP_REV: 0}");
+    await bloc.serialService.sendJsonData({
+      "MAV": "1",
+      "MP_FWD": "${_milkPumpSpeed.toInt()}",
+      "MP_REV": "0"
+    });
 
     print("Waiting milkOnTime: $milkOnTime seconds");
     await Future.delayed(Duration(seconds: milkOnTime));
@@ -675,6 +751,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     bloc.companyName = prefs.getString('companyName') ?? '';
+
+    _coffeePumpSpeed = prefs.getDouble('coffeePumpSpeed') ?? 120.0;
+    _teaPumpSpeed = prefs.getDouble('teaPumpSpeed') ?? 120.0;
+    _milkPumpSpeed = prefs.getDouble('milkPumpSpeed') ?? 120.0;
+
+    if (_coffeePumpSpeed > 250) _coffeePumpSpeed = 250.0;
+    if (_teaPumpSpeed > 250) _teaPumpSpeed = 250.0;
+    if (_milkPumpSpeed > 250) _milkPumpSpeed = 250.0;
 
     bloc.delaySettings['strongCoffee'] = {
       'cpDelay': (prefs.getInt('strongCoffee_cpDelay') ?? 0) ~/ 10,
@@ -1407,22 +1491,26 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             children: [
               Row(
                 children: [
-                  Text(
-                    "Temp :",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown.shade900,
-                    ),
-                  ),
-                  SizedBox(width: 10,),
-                  Text(
-                    "70° C",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown.shade900,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        "Temp :",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.brown.shade900,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        _tempError ? "Error" : "$_currentTemp° C",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _tempError ? Colors.red : Colors.brown.shade900,
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(width: 10,),
                   Text(

@@ -266,6 +266,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       _companyName = prefs.getString('companyName') ?? '';
       _configDelay = prefs.getInt('configDelay') ?? 0;
 
+      _teaPumpSpeed = prefs.getDouble('teaPumpSpeed') ?? 120.0;
+      _coffeePumpSpeed = prefs.getDouble('coffeePumpSpeed') ?? 120.0;
+      _milkPumpSpeed = prefs.getDouble('milkPumpSpeed') ?? 120.0;
+
+      if (_teaPumpSpeed > 250) _teaPumpSpeed = 250.0;
+      if (_coffeePumpSpeed > 250) _coffeePumpSpeed = 250.0;
+      if (_milkPumpSpeed > 250) _milkPumpSpeed = 250.0;
+
       _isLoading = false;
     });
   }
@@ -397,6 +405,13 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
         ),
       );
     }
+  }
+
+  Future<void> _savePumpSpeeds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('teaPumpSpeed', _teaPumpSpeed);
+    await prefs.setDouble('coffeePumpSpeed', _coffeePumpSpeed);
+    await prefs.setDouble('milkPumpSpeed', _milkPumpSpeed);
   }
 
   void _showSaveConfirmationDialog(BuildContext context) {
@@ -623,7 +638,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                           await prefs.setString('cleanAll', '30');
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const Cleaningscreen()),
+                            MaterialPageRoute(builder: (context) =>  Cleaningscreen(CleanTiming: 15,)),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -921,7 +936,8 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
               child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    await _savePumpSpeeds();
                     _showSaveConfirmationDialog(context);
                   },
                   label: const Text('SAVE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
@@ -1506,7 +1522,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         onPressed: () {
                           print('Tea Temp Set:: $_teaTemp°C');
                         },
-                        child: const Text('Brew Coffee', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: const Text('Brew Tea', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
@@ -1599,35 +1615,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               ),
             ),
           ),
-          SizedBox(height: 20,),
-          Align(
-            child: SizedBox(
-              width: 300,
-              child: ElevatedButton(
-                onPressed: () async {
-                  _CleanallConfirmationDialog(context);
-
-                  print('Cleaning all triggered');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: popoverForegroundColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: const Text(
-                  "CLEAN ALL",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1655,8 +1642,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ),
                       Spacer(),
                       ElevatedButton(
-                        onPressed: () {
-                          print('Tea Clean triggered');
+                        onPressed: () async {
+                          int totalSeconds = _teaCleanDelay + _teaClean;
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('cleanTea', totalSeconds.toString());
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) =>  Cleaningscreen(CleanTiming: totalSeconds,)),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
@@ -1680,8 +1673,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ),
                       Spacer(),
                       ElevatedButton(
-                        onPressed: () {
-                          print('Coffee Clean triggered');
+                        onPressed: () async {
+                          int totalSeconds = _coffeeCleanDelay + _coffeeClean;
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('cleanCoffee', totalSeconds.toString());
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) =>  Cleaningscreen(CleanTiming: totalSeconds,)),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.brown,
@@ -1705,8 +1704,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ),
                       Spacer(),
                       ElevatedButton(
-                        onPressed: () {
-                          print('Milk Clean triggered');
+                        onPressed: () async {
+                          int totalSeconds = _milkCleanDelay + _milkClean;
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('cleanMilk', totalSeconds.toString());
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) =>  Cleaningscreen(CleanTiming: totalSeconds,)),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -1721,35 +1726,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     ],
                   ),
                 ],
-              ),
-            ),
-          ),
-          SizedBox(height: 20,),
-          Align(
-            child: SizedBox(
-              width: 300,
-              child: ElevatedButton(
-                onPressed: () async {
-                  _CleanallConfirmationDialog(context);
-
-                  print('Cleaning all triggered');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: popoverForegroundColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: const Text(
-                  "CLEAN ALL",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
               ),
             ),
           ),
@@ -1866,8 +1842,14 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                print('$label triggered');
+              onPressed: () async {
+                int totalSeconds = delayValue + value;
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString('clean${label.split(' ')[0]}', totalSeconds.toString());
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  Cleaningscreen(CleanTiming: totalSeconds,)),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
@@ -2651,7 +2633,10 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     _teaPumpSpeed,
                     Icons.emoji_food_beverage,
                     Colors.green,
-                        (value) => setState(() => _teaPumpSpeed = value),
+                        (value) {
+                      setState(() => _teaPumpSpeed = value);
+                      _savePumpSpeeds();
+                    },
                   ),
                   const Divider(height: 40),
                   _buildSpeedSlider(
@@ -2659,7 +2644,10 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     _coffeePumpSpeed,
                     Icons.coffee,
                     Colors.brown,
-                        (value) => setState(() => _coffeePumpSpeed = value),
+                        (value) {
+                      setState(() => _coffeePumpSpeed = value);
+                      _savePumpSpeeds();
+                    },
                   ),
                   const Divider(height: 40),
                   _buildSpeedSlider(
@@ -2667,7 +2655,10 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     _milkPumpSpeed,
                     Icons.water_drop,
                     Colors.blue,
-                        (value) => setState(() => _milkPumpSpeed = value),
+                        (value) {
+                      setState(() => _milkPumpSpeed = value);
+                      _savePumpSpeeds();
+                    },
                   ),
                 ],
               ),

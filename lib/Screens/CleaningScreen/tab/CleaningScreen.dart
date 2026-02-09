@@ -10,14 +10,15 @@ import '../../../helper/size_config.dart';
 import '../../../main.dart';
 
 class Cleaningscreen extends StatefulWidget {
-  const Cleaningscreen({super.key});
+  int CleanTiming;
+   Cleaningscreen({required this.CleanTiming,super.key});
 
   @override
   State<Cleaningscreen> createState() => _CleaningscreenState();
 }
 
 class _CleaningscreenState extends State<Cleaningscreen> {
-  int _remainingSeconds = 15;
+  late int _remainingSeconds = widget.CleanTiming;
   Timer? _timer;
   Timer? _checkTimer;
   Timer? _clockTimer;
