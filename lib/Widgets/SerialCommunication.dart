@@ -90,8 +90,8 @@ class SerialService {
   void _processReceivedData(String data) {
     try {
       final jsonData = json.decode(data);
-      if (jsonData['temp'] != null) {
-        onTempReceived?.call(jsonData['temp'].toString());
+      if (jsonData['TEMP'] != null) {
+        onTempReceived?.call(jsonData['TEMP'].toString());
       }
     } catch (e) {
       print("Error parsing JSON: $e");
