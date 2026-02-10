@@ -3,6 +3,8 @@ import 'package:coffee_vending/allImports.dart';
 
 import 'package:flutter/material.dart';
 
+import '../../../Widgets/SerialCommunication.dart';
+
 class adminScreenLogin extends StatefulWidget {
   const adminScreenLogin({super.key});
 
@@ -15,6 +17,7 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+
 
   @override
   void dispose() {
@@ -34,7 +37,7 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
         userType = 'staff';
       } else if (username == 'admin' && password == '987654') {
         userType = 'admin';
-      } else if (username == '3' && password == '3') {
+      } else if (username == 'e' && password == '3') {
         userType = 'developer';
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -373,8 +373,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
     await bloc.serialService.sendJsonData({
-      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TTP_REV": "0"
+      "TP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TP_REV": "0"
     });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
@@ -438,8 +438,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
     await bloc.serialService.sendJsonData({
-      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TTP_REV": "0"
+      "TP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TP_REV": "0"
     });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
@@ -501,8 +501,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Sending Tea Pump ON: {TP_FWD: ${_teaPumpSpeed.toInt()}, TP_REV: 0}");
     await bloc.serialService.sendJsonData({
-      "TTP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TTP_REV": "0"
+      "TP_FWD": "${_teaPumpSpeed.toInt()}",
+      "TP_REV": "0"
     });
 
     print("Waiting ttpOnTime: $ttpOnTime seconds");
@@ -1534,24 +1534,42 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               ),
               Row(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.brown.withOpacity(0.1),
-                      border: Border.all(color: Colors.brown),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 7,vertical: 5),
-                    child: CustomText(text: "Coffee Brewing",weight: FontWeight.w400,color: Colors.brown,),
+                  FutureBuilder<String>(
+                    future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                    builder: (context, snapshot) {
+                      String brewing = snapshot.data ?? '';
+                      return Visibility(
+                        visible: brewing == 'coffee',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.brown.withOpacity(0.1),
+                            border: Border.all(color: Colors.brown),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                          child: CustomText(text: "Coffee Brewing", weight: FontWeight.w400, color: Colors.brown),
+                        ),
+                      );
+                    },
                   ),
                   Gap(10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      border: Border.all(color: Colors.green),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 7,vertical: 5),
-                    child: CustomText(text: "Tea Brewing",weight: FontWeight.w400,color: Colors.green,),
+                  FutureBuilder<String>(
+                    future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                    builder: (context, snapshot) {
+                      String brewing = snapshot.data ?? '';
+                      return Visibility(
+                        visible: brewing == 'tea',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            border: Border.all(color: Colors.green),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                          child: CustomText(text: "Tea Brewing", weight: FontWeight.w400, color: Colors.green),
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(width: 10),
                   Container(
