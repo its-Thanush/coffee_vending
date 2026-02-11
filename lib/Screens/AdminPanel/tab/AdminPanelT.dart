@@ -8,6 +8,7 @@ import 'dart:convert';
 
 import '../../../Widgets/SerialCommunication.dart';
 import '../../../helper/colors.dart';
+import '../../../helper/customtext.dart';
 import '../../CleaningScreen/tab/CleaningScreen.dart';
 
 class Adminpanel extends StatefulWidget {
@@ -319,9 +320,45 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
       if (_coffeePumpSpeed > 250) _coffeePumpSpeed = 250.0;
       if (_milkPumpSpeed > 250) _milkPumpSpeed = 250.0;
 
+      _milkPumpDelay = prefs.getDouble('milkPumpDelay') ?? 0.0;
+      _milkPumpOnTime = prefs.getDouble('milkPumpOnTime') ?? 0.0;
+      _milkPumpForwardTime = prefs.getDouble('milkPumpForwardTime') ?? 0.0;
+
+      _teaPumpDelay = prefs.getDouble('teaPumpDelay') ?? 0.0;
+      _teaPumpOnTime = prefs.getDouble('teaPumpOnTime') ?? 0.0;
+      _teaPumpForwardTime = prefs.getDouble('teaPumpForwardTime') ?? 0.0;
+
+      _coffeePumpDelay = prefs.getDouble('coffeePumpDelay') ?? 0.0;
+      _coffeePumpOnTime = prefs.getDouble('coffeePumpOnTime') ?? 0.0;
+      _coffeePumpForwardTime = prefs.getDouble('coffeePumpForwardTime') ?? 0.0;
+
       _isLoading = false;
     });
   }
+
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF8B6B47),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
 
   void _startAUTOBrewing(String beverageType, double durationSeconds, double setPoint) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -484,6 +521,20 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     await prefs.setString('companyName', _companyName);
     await prefs.setString('cleanAll', CleanAll);
     await prefs.setInt('configDelay', _configDelay);
+
+    await prefs.setDouble('milkPumpDelay', _milkPumpDelay);
+    await prefs.setDouble('milkPumpOnTime', _milkPumpOnTime);
+    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+
+
+    await prefs.setDouble('coffeePumpDelay', _coffeePumpDelay);
+    await prefs.setDouble('coffeePumpOnTime', _coffeePumpOnTime);
+    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime);
+
+    await prefs.setDouble('teaPumpDelay', _teaPumpDelay);
+    await prefs.setDouble('teaPumpOnTime', _teaPumpOnTime);
+    await prefs.setDouble('teaPumpForwardTime', _teaPumpForwardTime);
+
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1060,6 +1111,44 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     color: _tempError ? Colors.red : Colors.white,
                   ),
                 ),
+                Gap(20),
+                FutureBuilder<String>(
+                  future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                  builder: (context, snapshot) {
+                    String brewing = snapshot.data ?? '';
+                    return Visibility(
+                      visible: brewing == 'coffee',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.brown.withOpacity(0.1),
+                          border: Border.all(color: Colors.brown),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        child: CustomText(text: "Coffee Brewing", weight: FontWeight.w400, color: Colors.brown),
+                      ),
+                    );
+                  },
+                ),
+                Gap(10),
+                FutureBuilder<String>(
+                  future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                  builder: (context, snapshot) {
+                    String brewing = snapshot.data ?? '';
+                    return Visibility(
+                      visible: brewing == 'tea',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          border: Border.all(color: Colors.green),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                        child: CustomText(text: "Tea Brewing", weight: FontWeight.w400, color: Colors.green),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
             Text('Machine Configuration', style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.white70)),
@@ -1495,6 +1584,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ElevatedButton(
                         onPressed: () {
                             _startAUTOBrewing('coffee', _coffeOnTimeValue, _coffeeTemp);
+                            _showSnackBar('Coffee Brewing Started at $_coffeeTemp°C for $_coffeOnTimeValue sec');
                           print('Coffee Temp Set: $_coffeeTemp°C');
                         },
                         child: const Text('Brew Coffee', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -1556,26 +1646,24 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _startAUTOBrewing('tea', _teaOnTimeValue, _teaTemp);
-                        print('Tea Temp Set: $_teaTemp°C');
-                      },
-                      child: const Text('Brew Tea', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          _startAUTOBrewing('tea', _teaOnTimeValue, _teaTemp);
+                          _showSnackBar('Tea Brewing Started at $_teaTemp°C for $_teaOnTimeValue sec');
+                          print('Tea Temp Set: $_teaTemp°C');
+                        },
+                        child: const Text('Brew Tea', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -1911,7 +1999,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
+            label!="Milk Cleaning"?Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1953,7 +2041,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                   ),
                 ],
               ),
-            ),
+            ):SizedBox(),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -2053,191 +2141,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
   }
 
 
-  // Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         children: [
-  //           Icon(icon, color: color, size: 28),
-  //           const SizedBox(width: 16),
-  //           Expanded(
-  //             child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-  //           ),
-  //         ],
-  //       ),
-  //       const SizedBox(height: 16),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-  //                 const SizedBox(height: 4),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onDelayChanged(delayValue + 1),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           const SizedBox(width: 8),
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Duration', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-  //                 const SizedBox(height: 4),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => value > 0 ? onChanged(value - 1) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onChanged(value + 1),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           // Spacer(),
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               print('$label triggered');
-  //             },
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: color,
-  //               foregroundColor: Colors.white,
-  //               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(5),
-  //               ),
-  //             ),
-  //             child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-  //           ),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // Widget _buildCleaningItem(String label, int value, int delayValue, IconData icon, Color color, Function(int) onChanged, Function(int) onDelayChanged) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         children: [
-  //           Icon(icon, color: color, size: 28),
-  //           const SizedBox(width: 16),
-  //           Expanded(
-  //             child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-  //           ),
-  //         ],
-  //       ),
-  //       const SizedBox(height: 16),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Delay', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-  //                 const SizedBox(height: 4),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => delayValue > 0 ? onDelayChanged(delayValue - 1) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('$delayValue sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onDelayChanged(delayValue + 1),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           const SizedBox(width: 8),
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Duration', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-  //                 const SizedBox(height: 4),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => value > 0 ? onChanged(value - 1) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('$value sec', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onChanged(value + 1),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
-
   Widget _buildReverseSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -2256,19 +2159,40 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       onDelayChanged: (value) => setState(() => _milkPumpDelay = value),
                       onOnTimeChanged: (value) => setState(() => _milkPumpOnTime = value),
                       onForwardTimeChanged: (value) => setState(() => _milkPumpForwardTime = value),
-                      onReverse: () => print('Milk Pump Reverse triggered')),
+                      onReverse: () async {
+                        await SerialService().sendJsonData({
+                          "MAV": "1",
+                          "MP_FWD": "0",
+                          "MP_REV": "${_milkPumpSpeed.toInt()}"
+                        });
+                        await Future.delayed(Duration(seconds: _milkPumpOnTime.toInt()));
+                        await SerialService().sendJsonData({
+                          "MAV": "0",
+                          "MP_FWD": "0",
+                          "MP_REV": "0"
+                        });
+                        _showSnackBar('Milk Pump Reversed for ${_milkPumpOnTime.toInt()} sec');
+                      },),
                   const Divider(height: 32),
                   _buildReverseItem('Tea Pump Reverse', _teaPumpDelay, _teaPumpOnTime, _teaPumpForwardTime, Icons.emoji_food_beverage, Colors.green,
                       onDelayChanged: (value) => setState(() => _teaPumpDelay = value),
                       onOnTimeChanged: (value) => setState(() => _teaPumpOnTime = value),
                       onForwardTimeChanged: (value) => setState(() => _teaPumpForwardTime = value),
-                      onReverse: () => print('Tea Pump Reverse triggered')),
+                      onReverse: () {
+                        _showSnackBar('Tea Pump Reverse for $_teaPumpOnTime sec');
+                        print('Tea Pump Reverse triggered');
+                      }
+                  ),
                   const Divider(height: 32),
                   _buildReverseItem('Coffee Pump Reverse', _coffeePumpDelay, _coffeePumpOnTime, _coffeePumpForwardTime, Icons.coffee, Colors.brown,
                       onDelayChanged: (value) => setState(() => _coffeePumpDelay = value),
                       onOnTimeChanged: (value) => setState(() => _coffeePumpOnTime = value),
                       onForwardTimeChanged: (value) => setState(() => _coffeePumpForwardTime = value),
-                      onReverse: () => print('Coffee Pump Reverse triggered')),
+                      onReverse: () {
+                        _showSnackBar('Coffee Pump Reverse for $_coffeePumpOnTime sec');
+                        print('Coffee Pump Reverse triggered');
+                      }
+                  ),
                 ],
               ),
             ),
@@ -2387,11 +2311,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                 ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
+            Gap(8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2433,7 +2353,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            Gap(8),
             ElevatedButton(
               onPressed: onReverse,
               style: ElevatedButton.styleFrom(
@@ -2452,152 +2372,6 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     );
   }
 
-
-  // Widget _buildReverseItem(
-  //     String label,
-  //     double delayValue,
-  //     double onTimeValue,
-  //     double forwardTimeValue,
-  //     IconData icon,
-  //     Color color, {
-  //       required Function(double) onDelayChanged,
-  //       required Function(double) onOnTimeChanged,
-  //       required Function(double) onForwardTimeChanged,
-  //       required VoidCallback onReverse,
-  //     }) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         children: [
-  //           Icon(icon, color: color, size: 28),
-  //           const SizedBox(width: 16),
-  //           Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-  //         ],
-  //       ),
-  //       const SizedBox(height: 16),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Delay', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
-  //                 const SizedBox(height: 8),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => delayValue > 0 ? onDelayChanged((delayValue - 0.1).clamp(0, 999.9)) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('${delayValue.toStringAsFixed(1)} s',
-  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onDelayChanged((delayValue + 0.1).clamp(0, 999.9)),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           const SizedBox(width: 8),
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('On Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
-  //                 const SizedBox(height: 8),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => onTimeValue > 0 ? onOnTimeChanged((onTimeValue - 0.1).clamp(0, 999.9)) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('${onTimeValue.toStringAsFixed(1)} s',
-  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onOnTimeChanged((onTimeValue + 0.1).clamp(0, 999.9)),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //       const SizedBox(height: 12),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('Forward Time', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
-  //                 const SizedBox(height: 8),
-  //                 Row(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () => forwardTimeValue > 0 ? onForwardTimeChanged((forwardTimeValue - 0.1).clamp(0, 999.9)) : null,
-  //                       icon: const Icon(Icons.remove_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //                       decoration: BoxDecoration(
-  //                         color: color.withOpacity(0.1),
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                       child: Text('${forwardTimeValue.toStringAsFixed(1)} s',
-  //                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-  //                     ),
-  //                     IconButton(
-  //                       onPressed: () => onForwardTimeChanged((forwardTimeValue + 0.1).clamp(0, 999.9)),
-  //                       icon: const Icon(Icons.add_circle_outline),
-  //                       color: color,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           const SizedBox(width: 16),
-  //           ElevatedButton(
-  //             onPressed: onReverse,
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: color,
-  //               foregroundColor: Colors.white,
-  //               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(10),
-  //               ),
-  //             ),
-  //             child: const Text('Reverse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-  //           ),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildCountsSettings() {
     return SingleChildScrollView(
