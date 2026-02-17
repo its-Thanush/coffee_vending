@@ -1120,12 +1120,12 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       visible: brewing == 'coffee',
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.brown.withOpacity(0.1),
-                          border: Border.all(color: Colors.brown),
+                          color: Colors.white.withOpacity(0.1),
+                          border: Border.all(color: Colors.white),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                        child: CustomText(text: "Coffee Brewing", weight: FontWeight.w400, color: Colors.brown),
+                        child: CustomText(text: "Coffee Brewing", weight: FontWeight.w400, color: Colors.white),
                       ),
                     );
                   },
@@ -2881,7 +2881,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                     Row(
                       children: [
                         SizedBox(
-                          height: 40,
+                          height: 42,
                           child: ElevatedButton(
                             onPressed: _showChangePasswordDialog,
                             style: ElevatedButton.styleFrom(
@@ -2894,7 +2894,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                         ),
                         const SizedBox(width: 16),
                         SizedBox(
-                          height: 40,
+                          height: 42,
                           child: ElevatedButton(
                             onPressed: _showResetAllDialog,
                             style: ElevatedButton.styleFrom(

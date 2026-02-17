@@ -5,6 +5,7 @@ import 'package:coffee_vending/Screens/preparation%20Screen/tab/Preparation.dart
 import 'package:coffee_vending/allImports.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,40 +52,8 @@ class PreparationWrapper extends StatefulWidget {
 
 class _PreparationWrapperState extends State<PreparationWrapper> {
   bool _isReady = false;
-  double _currentCoffeeTemp = 20.0;
-  double _currentTeaTemp = 20.0;
-  Timer? _tempSimulator;
-
-  final double coffeeTargetTemp = 95.0;
-  final double teaTargetTemp = 85.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeHeating();
-  }
-
-  void _initializeHeating() {
-    _tempSimulator = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (mounted) {
-        setState(() {
-          if (_currentCoffeeTemp < coffeeTargetTemp) {
-            _currentCoffeeTemp += 0.5;
-          }
-          if (_currentTeaTemp < teaTargetTemp) {
-            _currentTeaTemp += 0.4;
-          }
-        });
-      }
-    });
-  }
-
-  (double, double) _getCurrentTemperatures(double coffeeTarget, double teaTarget) {
-    return (_currentCoffeeTemp, _currentTeaTemp);
-  }
 
   void _onSystemReady() {
-    _tempSimulator?.cancel();
     if (mounted) {
       setState(() {
         _isReady = true;
@@ -93,22 +62,12 @@ class _PreparationWrapperState extends State<PreparationWrapper> {
   }
 
   @override
-  void dispose() {
-    _tempSimulator?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     if (!_isReady) {
       return Preparation(
-        coffeeTargetTemp: coffeeTargetTemp,
-        teaTargetTemp: teaTargetTemp,
-        getCurrentTemperatures: _getCurrentTemperatures,
         onReady: _onSystemReady,
       );
     }
-
     return const ScreenSaverWrapper();
   }
 }
@@ -123,16 +82,25 @@ class ScreenSaverWrapper extends StatefulWidget {
 class _ScreenSaverWrapperState extends State<ScreenSaverWrapper> {
   Timer? _inactivityTimer;
   bool _showScreenSaver = false;
+  int _configDelay = 60;
 
   @override
   void initState() {
     super.initState();
+    _loadConfigDelay();
+  }
+
+  Future<void> _loadConfigDelay() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _configDelay = prefs.getInt('configDelay')!;
+    });
     _resetTimer();
   }
 
   void _resetTimer() {
     _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(const Duration(minutes: 1), () {
+    _inactivityTimer = Timer(Duration(seconds: _configDelay), () {
       if (mounted) {
         setState(() {
           _showScreenSaver = true;

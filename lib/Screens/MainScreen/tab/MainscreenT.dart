@@ -427,7 +427,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     _coffeePumpForwardTime = cpOnTime.toDouble();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime);
+    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime + cpOnTime.toDouble());
     await _updateCoffeeUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -1056,13 +1056,16 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("--------_companyName---------->"+bloc.companyName);
   }
 
-  void stopBrewing() {
+  Future<void> stopBrewing() async {
     _brewTimer?.cancel();
     _brewProgressTimer?.cancel();
     setState(() {
       bloc.isBrewAnimating = false;
+      bloc.selectedItem =null;
       bloc.brewProgress = 0.0;
     });
+    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0","MAV": "0", "MP_FWD": "0", "MP_REV": "0","MHWV": "0","TP_FWD": "0", "TP_REV": "0","HWV": "0"});
+    print("---Stop Brewing---");
   }
 
   void _showBrewPopup() async {
@@ -1168,21 +1171,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                                         size: 48,
                                         color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
                                       ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'BREWING',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
-                                          letterSpacing: 2,
-                                        ),
-                                      ),
                                       const SizedBox(height: 6),
                                       Text(
                                         '${(bloc.brewProgress * 100).toInt()}%',
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                           color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
                                         ),
@@ -1197,19 +1190,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       ),
                       const SizedBox(height: 28),
                       const Text(
-                        'Brewing in Progress',
+                        'Preparing...',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Your beverage is being prepared',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -1227,7 +1212,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text(
-                          'Stop Brewing',
+                          'Stop',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1656,7 +1641,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'BREW',
+                  'START',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

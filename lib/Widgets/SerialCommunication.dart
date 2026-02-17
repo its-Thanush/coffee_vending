@@ -14,6 +14,7 @@ class SerialService {
   Function(String)? onTempReceived;
   StreamSubscription<Uint8List>? _subscription;
   String _buffer = '';
+  Function(int)? onFloatReceived;
 
   Future<bool> connect() async {
     try {
@@ -92,6 +93,9 @@ class SerialService {
       final jsonData = json.decode(data);
       if (jsonData['TEMP'] != null) {
         onTempReceived?.call(jsonData['TEMP'].toString());
+      }
+      if (jsonData['FLOAT'] != null) {
+        onFloatReceived?.call(jsonData['FLOAT']);
       }
     } catch (e) {
       print("Error parsing JSON: $e");
