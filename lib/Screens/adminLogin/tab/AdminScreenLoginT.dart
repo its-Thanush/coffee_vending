@@ -2,6 +2,7 @@ import 'package:coffee_vending/Screens/AdminPanel/tab/AdminPanelT.dart';
 import 'package:coffee_vending/allImports.dart';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Widgets/SerialCommunication.dart';
 
@@ -26,16 +27,20 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
       String username = _usernameController.text;
       String password = _passwordController.text;
 
+      final prefs = await SharedPreferences.getInstance();
+      final adminPass = prefs.getString('admin_password') ?? '987654';
+      final staffPass = prefs.getString('staff_password') ?? '123456';
+
       String? userType;
 
-      if (username == 'staff' && password == '123456') {
+      if (username == 'staff' && password == staffPass) {
         userType = 'staff';
-      } else if (username == 'admin' && password == '987654') {
+      } else if (username == 'admin' && password == adminPass) {
         userType = 'admin';
       } else if (username == 'e' && password == '3') {
         userType = 'developer';

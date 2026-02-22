@@ -3003,6 +3003,7 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
     final _currentPassController = TextEditingController();
     final _newPassController = TextEditingController();
     final _confirmPassController = TextEditingController();
+    String _selectedUser = 'admin';
 
     bool _showCurrentPass = false;
     bool _showNewPass = false;
@@ -3069,37 +3070,43 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
                       ),
 
                       const SizedBox(height: 20),
+                      DropdownButtonFormField<String>(
+                        value: _selectedUser,
+                        decoration: InputDecoration(
+                          labelText: 'Change Password For',
+                          prefixIcon: Icon(Icons.person, color: Color(0xFF6B4423)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                          DropdownMenuItem(value: 'staff', child: Text('Staff')),
+                        ],
+                        onChanged: (value) => setDialogState(() => _selectedUser = value!),
+                      ),
+                      const SizedBox(height: 20),
 
                       /// VERIFY BUTTON (HIDDEN AFTER VERIFIED)
                       if (!_isVerified)
                         ElevatedButton.icon(
-                          onPressed: () {
+                          onPressed: () async {
+                            final prefs = await SharedPreferences.getInstance();
+                            final adminPass = prefs.getString('admin_password') ?? '987654';
+
                             String currentPass = _currentPassController.text;
 
-                            bool isValid =
-                                (widget.userType == 'admin' &&
-                                    currentPass == '987654') ||
-                                    (widget.userType == 'developer' &&
-                                        currentPass == '3');
+                            bool isValid = currentPass == adminPass;
 
                             if (isValid) {
                               setDialogState(() {
                                 _currentPassController.text = 'verified';
-                                _isVerified = true; // ✅ HIDE BUTTON
+                                _isVerified = true;
                               });
-
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Password verified'),
-                                  backgroundColor: Colors.green,
-                                ),
+                                const SnackBar(content: Text('Password verified'), backgroundColor: Colors.green),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Invalid password'),
-                                  backgroundColor: Colors.red,
-                                ),
+                                const SnackBar(content: Text('Invalid admin password'), backgroundColor: Colors.red),
                               );
                             }
                           },
@@ -3180,23 +3187,20 @@ class _AdminpanelState extends State<Adminpanel> with SingleTickerProviderStateM
 
                 if (_isVerified)
                   ElevatedButton(
-                    onPressed: () {
-                      if (_newPassController.text ==
-                          _confirmPassController.text &&
+                    onPressed: () async {
+                      if (_newPassController.text == _confirmPassController.text &&
                           _newPassController.text.isNotEmpty) {
+                        final prefs = await SharedPreferences.getInstance();
+                        final key = _selectedUser == 'admin' ? 'admin_password' : 'staff_password';
+                        await prefs.setString(key, _newPassController.text);
+
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password changed successfully'),
-                            backgroundColor: Colors.green,
-                          ),
+                          const SnackBar(content: Text('Password changed successfully'), backgroundColor: Colors.green),
                         );
                         Navigator.pop(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Passwords do not match'),
-                            backgroundColor: Colors.red,
-                          ),
+                          const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
                         );
                       }
                     },
