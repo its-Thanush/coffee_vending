@@ -7,8 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'LocalDatabase/database_helper.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Isar local database
+  await DatabaseHelper.instance.init();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
@@ -64,9 +69,7 @@ class _PreparationWrapperState extends State<PreparationWrapper> {
   @override
   Widget build(BuildContext context) {
     if (!_isReady) {
-      return Preparation(
-        onReady: _onSystemReady,
-      );
+      return Preparation(onReady: _onSystemReady);
     }
     return const ScreenSaverWrapper();
   }
