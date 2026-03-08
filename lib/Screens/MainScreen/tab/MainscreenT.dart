@@ -22,7 +22,6 @@ class VendingMachineScreen extends StatefulWidget {
 }
 
 class _VendingMachineScreenState extends State<VendingMachineScreen> {
-
   late MainScreenBloc bloc;
   Timer? _brewProgressTimer;
   Timer? _brewTimer;
@@ -41,18 +40,15 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   int? _lastMilkUsedTime;
   Timer? _milkReverseCheckTimer;
 
-
-  double _teaPumpForwardTime =0.0;
-  double _teaPumpOnTime =0.0;
-  double _teaPumpDelay =0.0;
+  double _teaPumpForwardTime = 0.0;
+  double _teaPumpOnTime = 0.0;
+  double _teaPumpDelay = 0.0;
   int? _lastTeaUsedTime;
 
-  double _coffeePumpForwardTime=0.0;
-  double _coffeePumpOnTime=0.0;
-  double _coffeePumpDelay=0.0;
+  double _coffeePumpForwardTime = 0.0;
+  double _coffeePumpOnTime = 0.0;
+  double _coffeePumpDelay = 0.0;
   int? _lastCoffeeUsedTime;
-
-
 
   Timer? _teaReverseCheckTimer;
   Timer? _coffeeReverseCheckTimer;
@@ -60,7 +56,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   @override
   void initState() {
     super.initState();
-    bloc=BlocProvider.of<MainScreenBloc>(context);
+    bloc = BlocProvider.of<MainScreenBloc>(context);
     _loadSettings();
     bloc.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
@@ -84,7 +80,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       _resetTempTimeout();
     };
 
-    bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (
+      timer,
+    ) {
       _checkNodeMCUConnection();
     });
 
@@ -92,9 +90,141 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _startMilkReverseTimer();
     _startTeaReverseTimer();
     _startCoffeeReverseTimer();
-
   }
 
+  void _showCancelBrewingDialog(String beverageType) {
+    String title = beverageType == 'coffee' ? 'Coffee' : 'Tea';
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [const Color(0xFFFBF9F5), const Color(0xFFEDE7DD)],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B6B47).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 48,
+                    color: Color(0xFF8B6B47),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Cancel $title Brewing',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3D3530),
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Are you sure you want to cancel\n$title brewing?',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF75675A),
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF75675A),
+                          side: const BorderSide(
+                            color: Color(0xFFE0D7C9),
+                            width: 2,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'CLOSE',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(dialogContext).pop();
+                          String valveKey = beverageType == 'tea'
+                              ? 'TBV'
+                              : 'CBV';
+                          await bloc.serialService.sendJsonData({
+                            valveKey: "0",
+                          });
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          await prefs.remove('currentBrewing');
+                          await prefs.remove('remainingSeconds');
+                          if (mounted) setState(() {});
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B6B47),
+                          foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: const Color(0xFF8B6B47).withOpacity(0.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'OK',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _initNodeMCUConnection() async {
     bool connected = await bloc.serialService.connect();
@@ -129,9 +259,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startMilkReverseTimer() {
     _milkReverseCheckTimer?.cancel();
-    _milkReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _milkReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) async {
       if (_lastMilkUsedTime != null) {
-        int elapsedSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastMilkUsedTime!;
+        int elapsedSeconds =
+            DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastMilkUsedTime!;
         if (elapsedSeconds >= _milkPumpDelay) {
           await _executeMilkReverse();
           _lastMilkUsedTime = null;
@@ -146,13 +279,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "0",
-      "MP_REV": "${_milkPumpSpeed.toInt()}"
+      "MP_REV": "${_milkPumpSpeed.toInt()}",
     });
     await Future.delayed(Duration(seconds: _milkPumpOnTime.toInt()));
     await bloc.serialService.sendJsonData({
       "MAV": "0",
       "MP_FWD": "0",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
     _milkPumpForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
@@ -167,9 +300,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startTeaReverseTimer() {
     _teaReverseCheckTimer?.cancel();
-    _teaReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _teaReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) async {
       if (_lastTeaUsedTime != null) {
-        int elapsedSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastTeaUsedTime!;
+        int elapsedSeconds =
+            DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastTeaUsedTime!;
         if (elapsedSeconds >= _teaPumpDelay) {
           await _executeTeaReverse();
           _lastTeaUsedTime = null;
@@ -182,9 +318,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startCoffeeReverseTimer() {
     _coffeeReverseCheckTimer?.cancel();
-    _coffeeReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _coffeeReverseCheckTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) async {
       if (_lastCoffeeUsedTime != null) {
-        int elapsedSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastCoffeeUsedTime!;
+        int elapsedSeconds =
+            DateTime.now().millisecondsSinceEpoch ~/ 1000 -
+            _lastCoffeeUsedTime!;
         if (elapsedSeconds >= _coffeePumpDelay) {
           await _executeCoffeeReverse();
           _lastCoffeeUsedTime = null;
@@ -198,13 +338,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Future<void> _executeTeaReverse() async {
     await bloc.serialService.sendJsonData({
       "TP_FWD": "0",
-      "TP_REV": "${_teaPumpSpeed.toInt()}"
+      "TP_REV": "${_teaPumpSpeed.toInt()}",
     });
     await Future.delayed(Duration(seconds: _teaPumpOnTime.toInt()));
-    await bloc.serialService.sendJsonData({
-      "TP_FWD": "0",
-      "TP_REV": "0"
-    });
+    await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
     _teaPumpForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('teaPumpForwardTime', 0.0);
@@ -213,13 +350,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Future<void> _executeCoffeeReverse() async {
     await bloc.serialService.sendJsonData({
       "CP_FWD": "0",
-      "CP_REV": "${_coffeePumpSpeed.toInt()}"
+      "CP_REV": "${_coffeePumpSpeed.toInt()}",
     });
     await Future.delayed(Duration(seconds: _coffeePumpOnTime.toInt()));
-    await bloc.serialService.sendJsonData({
-      "CP_FWD": "0",
-      "CP_REV": "0"
-    });
+    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
     _coffeePumpForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('coffeePumpForwardTime', 0.0);
@@ -236,7 +370,6 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('lastCoffeeUsedTime', _lastCoffeeUsedTime!);
   }
-
 
   @override
   void dispose() {
@@ -270,13 +403,44 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Future<void> _incrementDrinkCount(String drinkName) async {
     final prefs = await SharedPreferences.getInstance();
     int currentCount = prefs.getInt('${drinkName}_count') ?? 0;
-    await prefs.setInt('${drinkName}_count', currentCount + 1);
+    int limit = prefs.getInt('limit_$drinkName') ?? 0;
+    int jump = prefs.getInt('jump_$drinkName') ?? 0;
+
+    currentCount += 1;
+
+    if (limit > 0 && jump > 0) {
+      if (currentCount % limit == 0) {
+        currentCount += jump;
+      }
+    }
+
+    await prefs.setInt('${drinkName}_count', currentCount);
   }
 
   String _formatDate(DateTime date) {
-    final days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    final months = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
+    final days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
 
     return '${days[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -299,17 +463,17 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     if (bloc.selectedItem == 'c1') {
       await _executeStrongCoffeeSequence();
-    }else if (bloc.selectedItem == 'c2') {
+    } else if (bloc.selectedItem == 'c2') {
       await _executeLiteCoffeeSequence();
-    }else if (bloc.selectedItem == 'c3') {
+    } else if (bloc.selectedItem == 'c3') {
       await _executeBlackCoffeeSequence();
-    }else if (bloc.selectedItem == 't1') {
+    } else if (bloc.selectedItem == 't1') {
       await _executeStrongTeaSequence();
     } else if (bloc.selectedItem == 't2') {
       await _executeLiteTeaSequence();
     } else if (bloc.selectedItem == 't3') {
       await _executeBlackTeaSequence();
-    }else if (bloc.selectedItem == 't4') {
+    } else if (bloc.selectedItem == 't4') {
       await _executeDipTeaSequence();
     } else if (bloc.selectedItem == 'e1') {
       await _executeHotMilkSequence();
@@ -336,10 +500,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("cpDelay complete");
 
     final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
-    print("Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds");
+    print(
+      "Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "CP_FWD": "${_coffeePumpSpeed.toInt()}",
-      "CP_REV": "0"
+      "CP_REV": "0",
     });
 
     print("Waiting cpOnTime with forward: $coffeeOnTimeWithForward seconds");
@@ -359,11 +525,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -371,7 +539,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
@@ -412,10 +584,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("cpDelay complete");
 
     final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
-    print("Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds");
+    print(
+      "Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "CP_FWD": "${_coffeePumpSpeed.toInt()}",
-      "CP_REV": "0"
+      "CP_REV": "0",
     });
 
     print("Waiting cpOnTime with forward: $coffeeOnTimeWithForward seconds");
@@ -427,7 +601,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     _coffeePumpForwardTime = cpOnTime.toDouble();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime + cpOnTime.toDouble());
+    await prefs.setDouble(
+      'coffeePumpForwardTime',
+      _coffeePumpForwardTime + cpOnTime.toDouble(),
+    );
     await _updateCoffeeUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -435,11 +612,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -447,7 +626,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
@@ -485,11 +668,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     await Future.delayed(Duration(seconds: ctpDelay));
     print("ctpDelay complete");
 
-    final coffeeOnTimeWithForward = (ctpOnTime + _coffeePumpForwardTime).toInt();
-    print("Sending Coffee Tea Pump ON with forward time: $coffeeOnTimeWithForward seconds");
+    final coffeeOnTimeWithForward = (ctpOnTime + _coffeePumpForwardTime)
+        .toInt();
+    print(
+      "Sending Coffee Tea Pump ON with forward time: $coffeeOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "CP_FWD": "${_coffeePumpSpeed.toInt()}",
-      "CP_REV": "0"
+      "CP_REV": "0",
     });
 
     print("Waiting ctpOnTime with forward: $coffeeOnTimeWithForward seconds");
@@ -539,10 +725,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
-    print("Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds");
+    print(
+      "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "TP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TP_REV": "0"
+      "TP_REV": "0",
     });
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
@@ -562,11 +750,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -574,7 +764,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
@@ -615,10 +809,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
-    print("Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds");
+    print(
+      "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "TP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TP_REV": "0"
+      "TP_REV": "0",
     });
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
@@ -638,11 +834,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -650,7 +848,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
@@ -689,10 +891,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
-    print("Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds");
+    print(
+      "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "TP_FWD": "${_teaPumpSpeed.toInt()}",
-      "TP_REV": "0"
+      "TP_REV": "0",
     });
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
@@ -754,11 +958,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -766,7 +972,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     final prefs = await SharedPreferences.getInstance();
@@ -792,11 +1002,13 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
-    print("Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds");
+    print(
+      "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
+    );
     await bloc.serialService.sendJsonData({
       "MAV": "1",
       "MP_FWD": "${_milkPumpSpeed.toInt()}",
-      "MP_REV": "0"
+      "MP_REV": "0",
     });
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
@@ -804,7 +1016,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
-    await bloc.serialService.sendJsonData({"MAV": "0", "MP_FWD": "0", "MP_REV": "0"});
+    await bloc.serialService.sendJsonData({
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+    });
 
     _milkPumpForwardTime = milkOnTime.toDouble();
     final prefs = await SharedPreferences.getInstance();
@@ -860,7 +1076,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     String drinkKey = '';
     String drinkName = '';
 
-    switch(bloc.selectedItem) {
+    switch (bloc.selectedItem) {
       case 'c1':
         drinkKey = 'strongCoffee';
         drinkName = 'Strong Coffee';
@@ -914,7 +1130,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     double incrementPerTick = 1.0 / (brewSeconds * 33.33);
 
-    _brewProgressTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+    _brewProgressTimer = Timer.periodic(const Duration(milliseconds: 30), (
+      timer,
+    ) {
       if (!mounted) {
         timer.cancel();
         _brewProgressTimer = null;
@@ -1033,10 +1251,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     bloc.delaySettings['hotWater'] = {
       'waterValveDelay': (prefs.getInt('hotWater_waterValveDelay') ?? 0) ~/ 10,
-      'waterValveOnTime': (prefs.getInt('hotWater_waterValveOnTime') ?? 0) ~/ 10,
+      'waterValveOnTime':
+          (prefs.getInt('hotWater_waterValveOnTime') ?? 0) ~/ 10,
     };
-
-
 
     _milkPumpDelay = prefs.getDouble('milkPumpDelay') ?? 0.0;
     _milkPumpOnTime = prefs.getDouble('milkPumpOnTime') ?? 0.0;
@@ -1051,9 +1268,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _coffeePumpOnTime = prefs.getDouble('coffeePumpOnTime') ?? 0.0;
     _coffeePumpForwardTime = prefs.getDouble('coffeePumpForwardTime') ?? 0.0;
 
-
-    print("strongCoffee cpDelay = ${bloc.delaySettings['strongCoffee']?['cpDelay']}");
-    print("--------_companyName---------->"+bloc.companyName);
+    print(
+      "strongCoffee cpDelay = ${bloc.delaySettings['strongCoffee']?['cpDelay']}",
+    );
+    print("--------_companyName---------->" + bloc.companyName);
   }
 
   Future<void> stopBrewing() async {
@@ -1061,10 +1279,20 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _brewProgressTimer?.cancel();
     setState(() {
       bloc.isBrewAnimating = false;
-      bloc.selectedItem =null;
+      bloc.selectedItem = null;
       bloc.brewProgress = 0.0;
     });
-    await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0","MAV": "0", "MP_FWD": "0", "MP_REV": "0","MHWV": "0","TP_FWD": "0", "TP_REV": "0","HWV": "0"});
+    await bloc.serialService.sendJsonData({
+      "CP_FWD": "0",
+      "CP_REV": "0",
+      "MAV": "0",
+      "MP_FWD": "0",
+      "MP_REV": "0",
+      "MHWV": "0",
+      "TP_FWD": "0",
+      "TP_REV": "0",
+      "HWV": "0",
+    });
     print("---Stop Brewing---");
   }
 
@@ -1081,10 +1309,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.brown.shade400,
-                  Colors.brown.shade800,
-                ],
+                colors: [Colors.brown.shade400, Colors.brown.shade800],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
@@ -1105,7 +1330,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                     children: [
                       const SizedBox(height: 20),
                       StreamBuilder<void>(
-                        stream: Stream.periodic(const Duration(milliseconds: 30)),
+                        stream: Stream.periodic(
+                          const Duration(milliseconds: 30),
+                        ),
                         builder: (dialogContext, snapshot) {
                           return Container(
                             width: 220,
@@ -1155,7 +1382,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                                             ),
                                           ),
                                           child: CustomPaint(
-                                            painter: WavePainter(bloc.brewProgress),
+                                            painter: WavePainter(
+                                              bloc.brewProgress,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1169,7 +1398,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                                       Icon(
                                         Icons.coffee_maker,
                                         size: 48,
-                                        color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+                                        color: bloc.brewProgress > 0.5
+                                            ? Colors.white
+                                            : Colors.brown.shade900,
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
@@ -1177,7 +1408,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
-                                          color: bloc.brewProgress > 0.5 ? Colors.white : Colors.brown.shade900,
+                                          color: bloc.brewProgress > 0.5
+                                              ? Colors.white
+                                              : Colors.brown.shade900,
                                         ),
                                       ),
                                     ],
@@ -1208,12 +1441,20 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[700],
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text(
                           'Stop',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -1246,18 +1487,12 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       const SizedBox(height: 12),
                       const Text(
                         'Your beverage is ready',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'Please collect it',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
@@ -1272,12 +1507,20 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[600],
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text(
                           'OK',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -1532,60 +1775,59 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   //   );
   // }
 
-
   @override
   Widget build(BuildContext context) {
-
     return BlocListener<MainScreenBloc, MainScreenState>(
-  listener: (context, state) {
-    // TODO: implement listener
-  },
-  child: BlocBuilder<MainScreenBloc, MainScreenState>(
-  builder: (context, state) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.brown.shade900,
-              Colors.brown.shade700,
-              Colors.brown.shade800,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                Expanded(
+      listener: (context, state) {
+        // TODO: implement listener
+      },
+      child: BlocBuilder<MainScreenBloc, MainScreenState>(
+        builder: (context, state) {
+          return Scaffold(
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.brown.shade900,
+                    Colors.brown.shade700,
+                    Colors.brown.shade800,
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
                   child: Column(
                     children: [
-                      Expanded(flex: 1, child: _buildCoffeeSection()),
+                      _buildHeader(),
                       const SizedBox(height: 20),
-                      Expanded(flex: 1, child: _buildTeaSection()),
-                      const SizedBox(height: 20),
-                      Expanded(flex: 1, child: _buildEssentialsSection()),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(flex: 1, child: _buildCoffeeSection()),
+                            const SizedBox(height: 20),
+                            Expanded(flex: 1, child: _buildTeaSection()),
+                            const SizedBox(height: 20),
+                            Expanded(flex: 1, child: _buildEssentialsSection()),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+            floatingActionButton: bloc.selectedItem != null
+                ? _buildBrewButton()
+                : null,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          );
+        },
       ),
-      floatingActionButton: bloc.selectedItem != null ? _buildBrewButton() : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
-  },
-),
-);
   }
-
 
   Widget _buildBrewButton() {
     const double size = 120;
@@ -1614,10 +1856,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                border: Border.all(
-                  color: Colors.brown.shade800,
-                  width: 4,
-                ),
+                border: Border.all(color: Colors.brown.shade800, width: 4),
               ),
             ),
             ClipOval(
@@ -1677,20 +1916,18 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(bloc.companyName.isEmpty?"Gemini Coffee":bloc.companyName,
+              Text(
+                bloc.companyName.isEmpty ? "Gemini Coffee" : bloc.companyName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.brown.shade900,
                 ),
               ),
-               SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 _formatDate(bloc.currentTime),
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.brown.shade600,
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.brown.shade600),
               ),
             ],
           ),
@@ -1715,12 +1952,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: _tempError ? Colors.red : Colors.brown.shade900,
+                          color: _tempError
+                              ? Colors.red
+                              : Colors.brown.shade900,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(width: 10,),
+                  SizedBox(width: 10),
                   Text(
                     "|",
                     style: TextStyle(
@@ -1729,7 +1968,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       color: Colors.brown.shade900,
                     ),
                   ),
-                  SizedBox(width: 10,),
+                  SizedBox(width: 10),
                   Text(
                     _formatTime(bloc.currentTime),
                     style: TextStyle(
@@ -1743,38 +1982,62 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               Row(
                 children: [
                   FutureBuilder<String>(
-                    future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                    future: SharedPreferences.getInstance().then(
+                      (prefs) => prefs.getString('currentBrewing') ?? '',
+                    ),
                     builder: (context, snapshot) {
                       String brewing = snapshot.data ?? '';
                       return Visibility(
                         visible: brewing == 'coffee',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.brown.withOpacity(0.1),
-                            border: Border.all(color: Colors.brown),
-                            borderRadius: BorderRadius.circular(5),
+                        child: GestureDetector(
+                          onTap: () => _showCancelBrewingDialog('coffee'),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.brown.withOpacity(0.1),
+                              border: Border.all(color: Colors.brown),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 5,
+                            ),
+                            child: CustomText(
+                              text: "Coffee Brewing",
+                              weight: FontWeight.w400,
+                              color: Colors.brown,
+                            ),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                          child: CustomText(text: "Coffee Brewing", weight: FontWeight.w400, color: Colors.brown),
                         ),
                       );
                     },
                   ),
                   Gap(10),
                   FutureBuilder<String>(
-                    future: SharedPreferences.getInstance().then((prefs) => prefs.getString('currentBrewing') ?? ''),
+                    future: SharedPreferences.getInstance().then(
+                      (prefs) => prefs.getString('currentBrewing') ?? '',
+                    ),
                     builder: (context, snapshot) {
                       String brewing = snapshot.data ?? '';
                       return Visibility(
                         visible: brewing == 'tea',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            border: Border.all(color: Colors.green),
-                            borderRadius: BorderRadius.circular(5),
+                        child: GestureDetector(
+                          onTap: () => _showCancelBrewingDialog('tea'),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              border: Border.all(color: Colors.green),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 5,
+                            ),
+                            child: CustomText(
+                              text: "Tea Brewing",
+                              weight: FontWeight.w400,
+                              color: Colors.green,
+                            ),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                          child: CustomText(text: "Tea Brewing", weight: FontWeight.w400, color: Colors.green),
                         ),
                       );
                     },
@@ -1788,9 +2051,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                       color: bloc.isNodeMCUOnline ? Colors.green : Colors.red,
                       boxShadow: [
                         BoxShadow(
-                          color: (bloc.isNodeMCUOnline ? Colors.green : Colors
-                              .red)
-                              .withOpacity(0.5),
+                          color:
+                              (bloc.isNodeMCUOnline ? Colors.green : Colors.red)
+                                  .withOpacity(0.5),
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),
@@ -1800,16 +2063,38 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                   Gap(10),
                   IconButton(
                     splashRadius: 3,
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => adminScreenLogin(),
+                          builder: (context) => const adminScreenLogin(),
                         ),
                       );
+
+                      // Re-register callbacks because SerialService is a singleton
+                      // and AdminPanelT might have overwritten them.
+                      bloc.serialService.onConnectionChanged = (bool status) {
+                        if (mounted) {
+                          setState(() {
+                            bloc.isNodeMCUOnline = status;
+                          });
+                        }
+                      };
+
+                      bloc.serialService.onTempReceived = (String temp) {
+                        if (mounted) {
+                          setState(() {
+                            _currentTemp = temp;
+                            _tempError = false;
+                          });
+                          _resetTempTimeout();
+                        }
+                      };
                     },
-                    icon: Icon(Icons.admin_panel_settings,
-                        color: Colors.brown.shade900),
+                    icon: Icon(
+                      Icons.admin_panel_settings,
+                      color: Colors.brown.shade900,
+                    ),
                   ),
                 ],
               ),
@@ -1826,13 +2111,24 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       icon: Icons.coffee,
       iconColor: Colors.amber.shade700,
       items: [
-        ItemData('Strong Coffee', 'c1', Colors.brown.shade900,
-            imagePath: 'assets/images/strong-espresso-coffee.jpg'),
-        ItemData('Lite Coffee', 'c2', Colors.brown.shade600,
-            imagePath: 'assets/images/light-latte-coffee.jpg'),
-        ItemData('Black Coffee', 'c3', Colors.grey.shade900,
-            imagePath: 'assets/images/black-americano-coffee.jpg'),
-
+        ItemData(
+          'Strong Coffee',
+          'c1',
+          Colors.brown.shade900,
+          imagePath: 'assets/images/strong-espresso-coffee.jpg',
+        ),
+        ItemData(
+          'Lite Coffee',
+          'c2',
+          Colors.brown.shade600,
+          imagePath: 'assets/images/light-latte-coffee.jpg',
+        ),
+        ItemData(
+          'Black Coffee',
+          'c3',
+          Colors.grey.shade900,
+          imagePath: 'assets/images/black-americano-coffee.jpg',
+        ),
       ],
     );
   }
@@ -1843,14 +2139,30 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       icon: Icons.local_cafe,
       iconColor: Colors.orange.shade700,
       items: [
-        ItemData('Strong Tea', 't1', Colors.orange.shade900,
-            imagePath: 'assets/images/strong-hot-tea.jpg'),
-        ItemData('Lite Tea', 't2', Colors.orange.shade600,
-            imagePath: 'assets/images/light-milk-tea.jpg'),
-        ItemData('Black Tea', 't3', Colors.grey.shade800,
-            imagePath: 'assets/images/black-tea-cup.jpg'),
-        ItemData('Dip Tea', 't4', Colors.grey.shade800,
-            imagePath: 'assets/images/dip_tea.png'),
+        ItemData(
+          'Strong Tea',
+          't1',
+          Colors.orange.shade900,
+          imagePath: 'assets/images/strong-hot-tea.jpg',
+        ),
+        ItemData(
+          'Lite Tea',
+          't2',
+          Colors.orange.shade600,
+          imagePath: 'assets/images/light-milk-tea.jpg',
+        ),
+        ItemData(
+          'Black Tea',
+          't3',
+          Colors.grey.shade800,
+          imagePath: 'assets/images/black-tea-cup.jpg',
+        ),
+        ItemData(
+          'Dip Tea',
+          't4',
+          Colors.grey.shade800,
+          imagePath: 'assets/images/dip_tea.png',
+        ),
       ],
     );
   }
@@ -1861,12 +2173,20 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       icon: Icons.whatshot,
       iconColor: Colors.blue.shade400,
       items: [
-        ItemData('Hot Milk', 'e1', Colors.grey.shade100,
-            textColor: Colors.grey.shade800,
-            imagePath: 'assets/images/glass-of-hot-milk.jpg'),
-        ItemData('Hot Water', 'e2', Colors.blue.shade100,
-            textColor: Colors.grey.shade800,
-            imagePath: 'assets/images/steaming-hot-water-cup.jpg'),
+        ItemData(
+          'Hot Milk',
+          'e1',
+          Colors.grey.shade100,
+          textColor: Colors.grey.shade800,
+          imagePath: 'assets/images/glass-of-hot-milk.jpg',
+        ),
+        ItemData(
+          'Hot Water',
+          'e2',
+          Colors.blue.shade100,
+          textColor: Colors.grey.shade800,
+          imagePath: 'assets/images/steaming-hot-water-cup.jpg',
+        ),
       ],
     );
   }
@@ -1878,7 +2198,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     required List<ItemData> items,
   }) {
     return Container(
-      padding:  EdgeInsets.symmetric(horizontal: 10,vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -1890,7 +2210,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           Row(
             children: [
               Icon(icon, color: iconColor, size: 24),
-               SizedBox(width: 10),
+              SizedBox(width: 10),
               Text(
                 title,
                 style: const TextStyle(
@@ -1931,7 +2251,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         });
       },
       child: Container(
-        height:110,
+        height: 110,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: isSelected
@@ -2031,6 +2351,3 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     );
   }
 }
-
-
-

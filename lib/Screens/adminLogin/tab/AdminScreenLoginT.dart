@@ -15,21 +15,19 @@ class adminScreenLogin extends StatefulWidget {
 
 class _adminScreenLoginState extends State<adminScreenLogin> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-
+  String? _selectedRole;
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   void _handleSubmit() async {
+    if (_selectedRole == null) return;
     if (_formKey.currentState!.validate()) {
-      String username = _usernameController.text;
       String password = _passwordController.text;
 
       final prefs = await SharedPreferences.getInstance();
@@ -38,16 +36,16 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
 
       String? userType;
 
-      if (username == 'staff' && password == staffPass) {
+      if (_selectedRole == 'staff' && password == staffPass) {
         userType = 'staff';
-      } else if (username == 'admin' && password == adminPass) {
+      } else if (_selectedRole == 'admin' && password == adminPass) {
         userType = 'admin';
-      } else if (username == 'e' && password == '3') {
+      } else if (_selectedRole == 'admin' && password == '3') {
         userType = 'developer';
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid credentials')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invalid credentials')));
         return;
       }
 
@@ -93,11 +91,7 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Logo/Title
-                        Icon(
-                          Icons.coffee,
-                          size: 64,
-                          color: Colors.brown[700],
-                        ),
+                        Icon(Icons.coffee, size: 64, color: Colors.brown[700]),
                         const SizedBox(height: 16),
                         Text(
                           'Admin Login',
@@ -109,124 +103,121 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Username Field
-                        TextFormField(
-                          controller: _usernameController,
-                          decoration: InputDecoration(
-                            labelText: 'Username',
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your username';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Password Field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 0) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Submit Button
+                        // Role Selection Buttons
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Go Back Button
-                            Expanded(
-                              child: SizedBox(
-                                height: 50,
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.brown[700],
-                                    side: BorderSide(
-                                      color: Colors.brown[700]!,
-                                      width: 2,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  child: const Text(
-                                    'Go Back',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            _buildRoleButton(
+                              'staff',
+                              Icons.person_outline,
+                              'Staff',
                             ),
-                            const SizedBox(width: 16),
-
-                            // Submit Button
-                            Expanded(
-                              child: SizedBox(
-                                height: 50,
-                                child: OutlinedButton(
-                                  onPressed: _handleSubmit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.brown[700],
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                  ),
-                                  child: const Text(
-                                    'Submit',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            const SizedBox(width: 20),
+                            _buildRoleButton(
+                              'admin',
+                              Icons.admin_panel_settings,
+                              'Admin',
                             ),
                           ],
                         ),
+                        if (_selectedRole != null) ...[
+                          const SizedBox(height: 20),
+
+                          // Password Field
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: !_isPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Submit Button
+                          Row(
+                            children: [
+                              // Go Back Button
+                              Expanded(
+                                child: SizedBox(
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.brown[700],
+                                      side: BorderSide(
+                                        color: Colors.brown[700]!,
+                                        width: 2,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      backgroundColor: Colors.white,
+                                    ),
+                                    child: const Text(
+                                      'Go Back',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+
+                              // Submit Button
+                              Expanded(
+                                child: SizedBox(
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: _handleSubmit,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.brown[700],
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                    child: const Text(
+                                      'Submit',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -234,6 +225,59 @@ class _adminScreenLoginState extends State<adminScreenLogin> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleButton(String role, IconData icon, String label) {
+    final isSelected = _selectedRole == role;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRole = role;
+          _passwordController.clear();
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.brown[700] : Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.brown[800]! : Colors.grey[300]!,
+            width: 2,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.brown.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: isSelected ? Colors.white : Colors.brown[600],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.brown[600],
+              ),
+            ),
+          ],
         ),
       ),
     );
