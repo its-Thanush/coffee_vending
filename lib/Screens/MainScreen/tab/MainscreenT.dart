@@ -53,11 +53,15 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   Timer? _teaReverseCheckTimer;
   Timer? _coffeeReverseCheckTimer;
 
+  int _brewingPercentage = 0;
+  String? _currentlyBrewing;
+
   @override
   void initState() {
     super.initState();
     bloc = BlocProvider.of<MainScreenBloc>(context);
     _loadSettings();
+    _startBrewingPollTimer();
     bloc.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         bloc.currentTime = DateTime.now();
@@ -90,6 +94,31 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _startMilkReverseTimer();
     _startTeaReverseTimer();
     _startCoffeeReverseTimer();
+  }
+
+  void _startBrewingPollTimer() {
+    _brewProgressTimer?.cancel();
+    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) async {
+      final prefs = await SharedPreferences.getInstance();
+      String? brewing = prefs.getString('currentBrewing');
+      int remaining = prefs.getInt('remainingSeconds') ?? 0;
+      int total = prefs.getInt('totalBrewSeconds') ?? 0;
+
+      if (mounted) {
+        setState(() {
+          _currentlyBrewing = brewing;
+          if (brewing != null && total > 0 && remaining >= 0) {
+            _brewingPercentage = ((total - remaining) / total * 100)
+                .clamp(0, 100)
+                .toInt();
+          } else {
+            _brewingPercentage = 0;
+          }
+        });
+      }
+    });
   }
 
   void _showCancelBrewingDialog(String beverageType) {
@@ -194,7 +223,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                               await SharedPreferences.getInstance();
                           await prefs.remove('currentBrewing');
                           await prefs.remove('remainingSeconds');
-                          if (mounted) setState(() {});
+                          await prefs.remove('totalBrewSeconds');
+                          await prefs.remove('brewSetPoint');
+                          if (mounted) {
+                            setState(() {
+                              _currentlyBrewing = null;
+                              _brewingPercentage = 0;
+                            });
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B6B47),
@@ -1981,66 +2017,50 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
               ),
               Row(
                 children: [
-                  FutureBuilder<String>(
-                    future: SharedPreferences.getInstance().then(
-                      (prefs) => prefs.getString('currentBrewing') ?? '',
-                    ),
-                    builder: (context, snapshot) {
-                      String brewing = snapshot.data ?? '';
-                      return Visibility(
-                        visible: brewing == 'coffee',
-                        child: GestureDetector(
-                          onTap: () => _showCancelBrewingDialog('coffee'),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.brown.withOpacity(0.1),
-                              border: Border.all(color: Colors.brown),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 5,
-                            ),
-                            child: CustomText(
-                              text: "Coffee Brewing",
-                              weight: FontWeight.w400,
-                              color: Colors.brown,
-                            ),
-                          ),
+                  Visibility(
+                    visible: _currentlyBrewing == 'coffee',
+                    child: GestureDetector(
+                      onTap: () => _showCancelBrewingDialog('coffee'),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.brown.withOpacity(0.1),
+                          border: Border.all(color: Colors.brown),
+                          borderRadius: BorderRadius.circular(5),
                         ),
-                      );
-                    },
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 5,
+                        ),
+                        child: CustomText(
+                          text: "Coffee Brewing $_brewingPercentage%",
+                          weight: FontWeight.w400,
+                          color: Colors.brown,
+                        ),
+                      ),
+                    ),
                   ),
                   Gap(10),
-                  FutureBuilder<String>(
-                    future: SharedPreferences.getInstance().then(
-                      (prefs) => prefs.getString('currentBrewing') ?? '',
-                    ),
-                    builder: (context, snapshot) {
-                      String brewing = snapshot.data ?? '';
-                      return Visibility(
-                        visible: brewing == 'tea',
-                        child: GestureDetector(
-                          onTap: () => _showCancelBrewingDialog('tea'),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              border: Border.all(color: Colors.green),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 5,
-                            ),
-                            child: CustomText(
-                              text: "Tea Brewing",
-                              weight: FontWeight.w400,
-                              color: Colors.green,
-                            ),
-                          ),
+                  Visibility(
+                    visible: _currentlyBrewing == 'tea',
+                    child: GestureDetector(
+                      onTap: () => _showCancelBrewingDialog('tea'),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          border: Border.all(color: Colors.green),
+                          borderRadius: BorderRadius.circular(5),
                         ),
-                      );
-                    },
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 5,
+                        ),
+                        child: CustomText(
+                          text: "Tea Brewing $_brewingPercentage%",
+                          weight: FontWeight.w400,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
                   ),
                   SizedBox(width: 10),
                   Container(

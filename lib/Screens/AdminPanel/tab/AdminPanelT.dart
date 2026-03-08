@@ -35,7 +35,7 @@ class _AdminpanelState extends State<Adminpanel>
       'milkDelay': 0,
       'milkOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'liteCoffee': {
       'cpDelay': 0,
@@ -43,13 +43,13 @@ class _AdminpanelState extends State<Adminpanel>
       'milkDelay': 0,
       'milkOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'blackCoffee': {
       'ctpDelay': 0,
       'ctpOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'strongTea': {
       'ttpDelay': 0,
@@ -57,7 +57,7 @@ class _AdminpanelState extends State<Adminpanel>
       'milkDelay': 0,
       'milkOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'liteTea': {
       'ttpDelay': 0,
@@ -65,25 +65,25 @@ class _AdminpanelState extends State<Adminpanel>
       'milkDelay': 0,
       'milkOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'blackTea': {
       'ttpDelay': 0,
       'ttpOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'dipTea': {
       'waterDelay': 0,
       'waterOnTime': 0,
       'milkDelay': 0,
-      'milkOnTime': 0
+      'milkOnTime': 0,
     },
     'hotMilk': {
       'milkDelay': 0,
       'milkOnTime': 0,
       'waterDelay': 0,
-      'waterOnTime': 0
+      'waterOnTime': 0,
     },
     'hotWater': {'waterValveDelay': 0, 'waterValveOnTime': 0},
   };
@@ -203,6 +203,10 @@ class _AdminpanelState extends State<Adminpanel>
 
   Timer? _brewingTimer;
   bool _isValveOpen = false;
+  int _totalBrewSeconds = 0;
+  int _remainingBrewSeconds = 0;
+  int _brewingPercentage = 0;
+  String? _currentlyBrewing;
 
   @override
   void initState() {
@@ -216,6 +220,8 @@ class _AdminpanelState extends State<Adminpanel>
         _loadSettings();
       }
     });
+
+    _checkAndResumeBrewing();
 
     serialService.onTempReceived = (String temp) {
       setState(() {
@@ -234,6 +240,26 @@ class _AdminpanelState extends State<Adminpanel>
         _currentTemp = "Error";
       });
     });
+  }
+
+  void _checkAndResumeBrewing() async {
+    final prefs = await SharedPreferences.getInstance();
+    int remaining = prefs.getInt('remainingSeconds') ?? 0;
+    String? brewing = prefs.getString('currentBrewing');
+    int total = prefs.getInt('totalBrewSeconds') ?? 0;
+    double setPoint = prefs.getDouble('brewSetPoint') ?? 0.0;
+
+    if (remaining > 0 && brewing != null && total > 0) {
+      if (mounted) {
+        setState(() {
+          _currentlyBrewing = brewing;
+          _totalBrewSeconds = total;
+          _remainingBrewSeconds = remaining;
+          _brewingPercentage = ((total - remaining) / total * 100).toInt();
+        });
+      }
+      _checkTemperatureAndBrew(brewing, total, setPoint);
+    }
   }
 
   void _resetTempTimeout() {
@@ -353,6 +379,8 @@ class _AdminpanelState extends State<Adminpanel>
 
       _coffeeTemp = prefs.getDouble('coffeeTemp') ?? 85.0;
       _teaTemp = prefs.getDouble('teaTemp') ?? 90.0;
+      _coffeOnTimeValue = prefs.getDouble('coffeOnTimeValue') ?? 0.0;
+      _teaOnTimeValue = prefs.getDouble('teaOnTimeValue') ?? 0.0;
 
       _teaClean = prefs.getInt('teaClean') ?? 10;
       _coffeeClean = prefs.getInt('coffeeClean') ?? 10;
@@ -494,8 +522,14 @@ class _AdminpanelState extends State<Adminpanel>
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
                           await prefs.remove('currentBrewing');
-                          await prefs.remove('remainingSeconds');
-                          if (mounted) setState(() {});
+                          if (mounted) {
+                            setState(() {
+                              _currentlyBrewing = null;
+                              _brewingPercentage = 0;
+                              _remainingBrewSeconds = 0;
+                              _totalBrewSeconds = 0;
+                            });
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B6B47),
@@ -557,6 +591,17 @@ class _AdminpanelState extends State<Adminpanel>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('currentBrewing', beverageType);
     await prefs.setInt('remainingSeconds', durationSeconds.toInt());
+    await prefs.setInt('totalBrewSeconds', durationSeconds.toInt());
+    await prefs.setDouble('brewSetPoint', setPoint);
+
+    if (mounted) {
+      setState(() {
+        _currentlyBrewing = beverageType;
+        _totalBrewSeconds = durationSeconds.toInt();
+        _remainingBrewSeconds = durationSeconds.toInt();
+        _brewingPercentage = 0;
+      });
+    }
 
     _isValveOpen = true;
     String valveKey = beverageType == 'tea' ? 'TBV' : 'CBV';
@@ -575,6 +620,7 @@ class _AdminpanelState extends State<Adminpanel>
     _brewingTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       int remaining = prefs.getInt('remainingSeconds') ?? 0;
+      int total = prefs.getInt('totalBrewSeconds') ?? totalSeconds;
 
       if (remaining <= 0) {
         timer.cancel();
@@ -601,6 +647,17 @@ class _AdminpanelState extends State<Adminpanel>
 
       if (_isValveOpen) {
         await prefs.setInt('remainingSeconds', remaining - 1);
+        if (mounted) {
+          setState(() {
+            _remainingBrewSeconds = remaining - 1;
+            _totalBrewSeconds = total;
+            if (total > 0) {
+              _brewingPercentage = ((total - (remaining - 1)) / total * 100)
+                  .clamp(0, 100)
+                  .toInt();
+            }
+          });
+        }
         print('Timer running: ${remaining - 1}s remaining');
       } else {
         print('Timer paused: ${remaining}s remaining');
@@ -617,6 +674,17 @@ class _AdminpanelState extends State<Adminpanel>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('currentBrewing');
     await prefs.remove('remainingSeconds');
+    await prefs.remove('totalBrewSeconds');
+    await prefs.remove('brewSetPoint');
+
+    if (mounted) {
+      setState(() {
+        _currentlyBrewing = null;
+        _brewingPercentage = 0;
+        _remainingBrewSeconds = 0;
+        _totalBrewSeconds = 0;
+      });
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -801,6 +869,8 @@ class _AdminpanelState extends State<Adminpanel>
 
     await prefs.setDouble('coffeeTemp', _coffeeTemp);
     await prefs.setDouble('teaTemp', _teaTemp);
+    await prefs.setDouble('coffeOnTimeValue', _coffeOnTimeValue);
+    await prefs.setDouble('teaOnTimeValue', _teaOnTimeValue);
 
     await prefs.setInt('teaClean', _teaClean);
     await prefs.setInt('coffeeClean', _coffeeClean);
@@ -1488,66 +1558,44 @@ class _AdminpanelState extends State<Adminpanel>
                   ),
                 ),
                 Gap(20),
-                FutureBuilder<String>(
-                  future: SharedPreferences.getInstance().then(
-                    (prefs) => prefs.getString('currentBrewing') ?? '',
-                  ),
-                  builder: (context, snapshot) {
-                    String brewing = snapshot.data ?? '';
-                    return Visibility(
-                      visible: brewing == 'coffee',
-                      child: GestureDetector(
-                        onTap: () => _showCancelBrewingDialog('coffee'),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            border: Border.all(color: Colors.white),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 5,
-                          ),
-                          child: CustomText(
-                            text: "Coffee Brewing",
-                            weight: FontWeight.w400,
-                            color: Colors.white,
-                          ),
-                        ),
+                Visibility(
+                  visible: _currentlyBrewing == 'coffee',
+                  child: GestureDetector(
+                    onTap: () => _showCancelBrewingDialog('coffee'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(5),
                       ),
-                    );
-                  },
+                      padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                      child: CustomText(
+                        text: "Coffee Brewing $_brewingPercentage%",
+                        weight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
                 Gap(10),
-                FutureBuilder<String>(
-                  future: SharedPreferences.getInstance().then(
-                    (prefs) => prefs.getString('currentBrewing') ?? '',
-                  ),
-                  builder: (context, snapshot) {
-                    String brewing = snapshot.data ?? '';
-                    return Visibility(
-                      visible: brewing == 'tea',
-                      child: GestureDetector(
-                        onTap: () => _showCancelBrewingDialog('tea'),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            border: Border.all(color: Colors.green),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 5,
-                          ),
-                          child: CustomText(
-                            text: "Tea Brewing",
-                            weight: FontWeight.w400,
-                            color: Colors.green,
-                          ),
-                        ),
+                Visibility(
+                  visible: _currentlyBrewing == 'tea',
+                  child: GestureDetector(
+                    onTap: () => _showCancelBrewingDialog('tea'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        border: Border.all(color: Colors.green),
+                        borderRadius: BorderRadius.circular(5),
                       ),
-                    );
-                  },
+                      padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                      child: CustomText(
+                        text: "Tea Brewing $_brewingPercentage%",
+                        weight: FontWeight.w400,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
