@@ -11,7 +11,7 @@ import '../../../main.dart';
 
 class Cleaningscreen extends StatefulWidget {
   int CleanTiming;
-   Cleaningscreen({required this.CleanTiming,super.key});
+  Cleaningscreen({required this.CleanTiming, super.key});
 
   @override
   State<Cleaningscreen> createState() => _CleaningscreenState();
@@ -65,6 +65,16 @@ class _CleaningscreenState extends State<Cleaningscreen> {
     int minutes = seconds ~/ 60;
     int secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void _stopCleaning() {
+    _timer?.cancel();
+    _checkTimer?.cancel();
+    _clockTimer?.cancel();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ScreenSaverWrapper()),
+    );
   }
 
   @override
@@ -153,6 +163,30 @@ class _CleaningscreenState extends State<Cleaningscreen> {
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                SizedBox(
+                  width: 200,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _stopCleaning,
+
+                    label: const Text(
+                      'Stop Cleaning',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE74C3C),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
                   ),
                 ),
               ],
