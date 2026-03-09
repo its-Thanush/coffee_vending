@@ -14,7 +14,7 @@ class SerialService {
   Function(String)? onTempReceived;
   StreamSubscription<Uint8List>? _subscription;
   String _buffer = '';
-  Function(int)? onFloatReceived;
+  Function(String)? onFloatReceived;
 
   Future<bool> connect() async {
     try {
@@ -89,10 +89,12 @@ class SerialService {
   }
 
   void _processReceivedData(String data) {
+    print("-------json Data---->"+data);
     try {
       final jsonData = json.decode(data);
       if (jsonData['TEMP'] != null) {
-        onTempReceived?.call(jsonData['TEMP'].toString());
+        print("--------------TEmp---Receiving--------->"+jsonData['TEMP'].toString());
+        onTempReceived?.call(jsonData['TEMP']);
       }
       if (jsonData['FLOAT'] != null) {
         onFloatReceived?.call(jsonData['FLOAT']);

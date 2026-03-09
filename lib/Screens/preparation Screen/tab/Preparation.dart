@@ -35,7 +35,7 @@ class _PreparationState extends State<Preparation> {
   String _currentTempString = "--";
   bool _tempError = false;
   Timer? _tempTimeoutTimer;
-  int _floatLevel = 0;
+  String _floatLevel = "";
   bool _showWaterWarning = false;
 
   final SerialService serialService = SerialService();
@@ -51,14 +51,23 @@ class _PreparationState extends State<Preparation> {
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateDateTime();
     });
-    serialService.onFloatReceived = (int floatValue) {
+    serialService.onTempReceived = (String temp) {
+      print("=========Receving temp ========>"+temp);
+      setState(() {
+        _currentTempString = temp;
+        _currentTemp = double.tryParse(temp) ?? 0.0;
+      });
+    };
+    serialService.onFloatReceived = (String floatValue) {
+      print("=========Receving FLOAT ========>"+floatValue.toString());
       setState(() {
         _floatLevel = floatValue;
-        _showWaterWarning = floatValue == 0;
-        if (floatValue == 1) {
-          _startTemperatureCheck();
-        }
+        _showWaterWarning = floatValue == "1";
       });
+      if (floatValue == "0") {
+        print("---------------------heater ON --------------------------");
+        _startTemperatureCheck();
+      }
     };
 
     _initNodeMCUConnection();
@@ -122,32 +131,33 @@ class _PreparationState extends State<Preparation> {
   }
 
   void _startTemperatureCheck() {
-    SerialService().onTempReceived = (String temp) {
+    serialService.onTempReceived = (String temp) {
       setState(() {
         _currentTempString = temp;
         _currentTemp = double.tryParse(temp) ?? 0.0;
-        _currentProgress = (_currentTemp / _targetTemp).clamp(0.0, 1.0);
 
-        if (_currentProgress < 0.3) {
-          _statusText = 'Heating brewing systems...';
-        } else if (_currentProgress < 0.6) {
-          _statusText = 'Optimizing temperature...';
-        } else if (_currentProgress < 0.9) {
-          _statusText = 'Almost ready...';
-        } else {
-          _statusText = 'System ready!';
+        if (_floatLevel == "0" && _targetTemp > 0) {
+          _currentProgress = (_currentTemp / _targetTemp).clamp(0.0, 1.0);
+
+          if (_currentProgress < 0.3) {
+            _statusText = 'Heating brewing systems...';
+          } else if (_currentProgress < 0.6) {
+            _statusText = 'Optimizing temperature...';
+          } else if (_currentProgress < 0.9) {
+            _statusText = 'Almost ready...';
+          } else {
+            _statusText = 'System ready!';
+          }
+
+          if (_currentTemp >= _targetTemp) {
+            Future.delayed(const Duration(milliseconds: 800), () {
+              if (mounted) widget.onReady();
+            });
+          } else {
+            serialService.sendJsonData({"SETTEMP": _targetTemp});
+          }
         }
       });
-
-      if (_currentTemp < _targetTemp) {
-        serialService.sendJsonData({"SETTEMP": _targetTemp});
-      } else {
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) {
-            widget.onReady();
-          }
-        });
-      }
     };
   }
 
@@ -330,7 +340,7 @@ class _PreparationState extends State<Preparation> {
                     ),
                     const SizedBox(height: 16),
                     CustomText(
-                      text:  _showWaterWarning?'Please check water level it is too low':_statusText,
+                      text:  _showWaterWarning?'Water level is low':_statusText,
                       size: SizeConfig.smallTitleText,
                       color: _showWaterWarning?Colors.orange:Colors.white.withOpacity(0.95),
                       weight: _showWaterWarning?FontWeight.bold:FontWeight.w500,

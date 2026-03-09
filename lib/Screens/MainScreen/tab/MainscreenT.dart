@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:coffee_vending/Screens/MainScreen/bloc/main_screen_bloc.dart';
 import 'package:coffee_vending/Screens/MainScreen/tab/MainscreenT.dart';
@@ -13,6 +14,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../Widgets/SerialCommunication.dart';
 
 class VendingMachineScreen extends StatefulWidget {
   const VendingMachineScreen({Key? key}) : super(key: key);
@@ -77,11 +80,16 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     };
 
     bloc.serialService.onTempReceived = (String temp) {
+      print("Mainscreen----temp--->"+temp);
       setState(() {
         _currentTemp = temp;
         _tempError = false;
       });
       _resetTempTimeout();
+    };
+
+    bloc.serialService.onFloatReceived =(String float){
+      print("Mainscreen----float--->"+float);
     };
 
     bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
@@ -123,6 +131,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
   void _resetTempTimeout() {
+    print("-------_resetTempTimeout---------------->");
     _tempTimeoutTimer?.cancel();
     _startTempTimeout();
   }
