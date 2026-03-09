@@ -58,6 +58,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   int _brewingPercentage = 0;
   String? _currentlyBrewing;
+  bool _isValveOpen = false;
 
   @override
   void initState() {
@@ -105,24 +106,79 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startBrewingPollTimer() {
     _brewProgressTimer?.cancel();
-    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (
-      timer,
-    ) async {
-      final prefs = await SharedPreferences.getInstance();
+    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
       String? brewing = prefs.getString('currentBrewing');
       int remaining = prefs.getInt('remainingSeconds') ?? 0;
       int total = prefs.getInt('totalBrewSeconds') ?? 0;
+      double setPoint = prefs.getDouble('brewSetPoint') ?? 0.0;
+
+      if (brewing == null || remaining <= 0 || total <= 0) {
+        if (mounted && _currentlyBrewing != null) {
+          setState(() {
+            _currentlyBrewing = null;
+            _brewingPercentage = 0;
+          });
+        }
+        return;
+      }
+
+      int now = DateTime.now().millisecondsSinceEpoch;
+      int lastUpdate = prefs.getInt('lastBrewUpdate') ?? 0;
+
+      if (now - lastUpdate < 800) {
+        if (mounted) {
+          setState(() {
+            _currentlyBrewing = brewing;
+            _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
+          });
+        }
+        return;
+      }
+
+      await prefs.setInt('lastBrewUpdate', now);
+
+      double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
+      String valveKey = brewing == 'tea' ? 'TBV' : 'CBV';
+      bool isValveOpen = prefs.getBool('isValveOpen') ?? false;
+
+      if (currentTemp < setPoint - 5 && isValveOpen) {
+        isValveOpen = false;
+        await prefs.setBool('isValveOpen', false);
+        await bloc.serialService.sendJsonData({valveKey: "0"});
+      } else if (currentTemp >= setPoint && !isValveOpen) {
+        isValveOpen = true;
+        await prefs.setBool('isValveOpen', true);
+        await bloc.serialService.sendJsonData({valveKey: "1"});
+      }
+
+      if (isValveOpen) {
+        remaining -= 1;
+        await prefs.setInt('remainingSeconds', remaining);
+        
+        if (remaining <= 0) {
+          await prefs.setBool('isValveOpen', false);
+          await bloc.serialService.sendJsonData({valveKey: "0"});
+          await prefs.remove('currentBrewing');
+          await prefs.remove('remainingSeconds');
+          await prefs.remove('totalBrewSeconds');
+          await prefs.remove('brewSetPoint');
+          await prefs.remove('isValveOpen');
+          
+          if (mounted) {
+            setState(() {
+              _currentlyBrewing = null;
+              _brewingPercentage = 0;
+            });
+          }
+          return;
+        }
+      }
 
       if (mounted) {
         setState(() {
           _currentlyBrewing = brewing;
-          if (brewing != null && total > 0 && remaining >= 0) {
-            _brewingPercentage = ((total - remaining) / total * 100)
-                .clamp(0, 100)
-                .toInt();
-          } else {
-            _brewingPercentage = 0;
-          }
+          _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
         });
       }
     });
@@ -226,12 +282,15 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                           await bloc.serialService.sendJsonData({
                             valveKey: "0",
                           });
+                          _isValveOpen = false;
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
+                          await prefs.setBool('isValveOpen', false);
                           await prefs.remove('currentBrewing');
                           await prefs.remove('remainingSeconds');
                           await prefs.remove('totalBrewSeconds');
                           await prefs.remove('brewSetPoint');
+                          await prefs.remove('isValveOpen');
                           if (mounted) {
                             setState(() {
                               _currentlyBrewing = null;
@@ -1116,6 +1175,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startBrewing() async {
     if (bloc.selectedItem == null || bloc.isBrewAnimating) return;
+
+    await _loadSettings();
 
     String drinkKey = '';
     String drinkName = '';

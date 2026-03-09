@@ -221,7 +221,7 @@ class _AdminpanelState extends State<Adminpanel>
       }
     });
 
-    _checkAndResumeBrewing();
+    _startBrewingPollTimer();
 
     serialService.onTempReceived = (String temp) {
       setState(() {
@@ -242,24 +242,92 @@ class _AdminpanelState extends State<Adminpanel>
     });
   }
 
-  void _checkAndResumeBrewing() async {
-    final prefs = await SharedPreferences.getInstance();
-    int remaining = prefs.getInt('remainingSeconds') ?? 0;
-    String? brewing = prefs.getString('currentBrewing');
-    int total = prefs.getInt('totalBrewSeconds') ?? 0;
-    double setPoint = prefs.getDouble('brewSetPoint') ?? 0.0;
+  void _startBrewingPollTimer() {
+    _brewingTimer?.cancel();
+    _brewingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? brewing = prefs.getString('currentBrewing');
+      int remaining = prefs.getInt('remainingSeconds') ?? 0;
+      int total = prefs.getInt('totalBrewSeconds') ?? 0;
+      double setPoint = prefs.getDouble('brewSetPoint') ?? 0.0;
 
-    if (remaining > 0 && brewing != null && total > 0) {
+      if (brewing == null || remaining <= 0 || total <= 0) {
+        if (mounted && _currentlyBrewing != null) {
+          setState(() {
+            _currentlyBrewing = null;
+            _brewingPercentage = 0;
+            _remainingBrewSeconds = 0;
+            _totalBrewSeconds = 0;
+          });
+        }
+        return;
+      }
+
+      int now = DateTime.now().millisecondsSinceEpoch;
+      int lastUpdate = prefs.getInt('lastBrewUpdate') ?? 0;
+
+      if (now - lastUpdate < 800) {
+        if (mounted) {
+          setState(() {
+            _currentlyBrewing = brewing;
+            _totalBrewSeconds = total;
+            _remainingBrewSeconds = remaining;
+            _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
+          });
+        }
+        return;
+      }
+
+      await prefs.setInt('lastBrewUpdate', now);
+
+      double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
+      String valveKey = brewing == 'tea' ? 'TBV' : 'CBV';
+      bool isValveOpen = prefs.getBool('isValveOpen') ?? false;
+
+      if (currentTemp < setPoint - 5 && isValveOpen) {
+        isValveOpen = false;
+        await prefs.setBool('isValveOpen', false);
+        await serialService.sendJsonData({valveKey: "0"});
+      } else if (currentTemp >= setPoint && !isValveOpen) {
+        isValveOpen = true;
+        await prefs.setBool('isValveOpen', true);
+        await serialService.sendJsonData({valveKey: "1"});
+      }
+
+      if (isValveOpen) {
+        remaining -= 1;
+        await prefs.setInt('remainingSeconds', remaining);
+        
+        if (remaining <= 0) {
+          await prefs.setBool('isValveOpen', false);
+          await serialService.sendJsonData({valveKey: "0"});
+          await prefs.remove('currentBrewing');
+          await prefs.remove('remainingSeconds');
+          await prefs.remove('totalBrewSeconds');
+          await prefs.remove('brewSetPoint');
+          await prefs.remove('isValveOpen');
+          
+          if (mounted) {
+            setState(() {
+              _currentlyBrewing = null;
+              _brewingPercentage = 0;
+              _remainingBrewSeconds = 0;
+              _totalBrewSeconds = 0;
+            });
+          }
+          return;
+        }
+      }
+
       if (mounted) {
         setState(() {
           _currentlyBrewing = brewing;
           _totalBrewSeconds = total;
           _remainingBrewSeconds = remaining;
-          _brewingPercentage = ((total - remaining) / total * 100).toInt();
+          _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
         });
       }
-      _checkTemperatureAndBrew(brewing, total, setPoint);
-    }
+    });
   }
 
   void _resetTempTimeout() {
@@ -521,7 +589,12 @@ class _AdminpanelState extends State<Adminpanel>
                           _isValveOpen = false;
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
+                          await prefs.setBool('isValveOpen', false);
                           await prefs.remove('currentBrewing');
+                          await prefs.remove('remainingSeconds');
+                          await prefs.remove('totalBrewSeconds');
+                          await prefs.remove('brewSetPoint');
+                          await prefs.remove('isValveOpen');
                           if (mounted) {
                             setState(() {
                               _currentlyBrewing = null;
@@ -604,87 +677,11 @@ class _AdminpanelState extends State<Adminpanel>
     }
 
     _isValveOpen = true;
+    await prefs.setBool('isValveOpen', true);
+    await prefs.setInt('lastBrewUpdate', 0);
     String valveKey = beverageType == 'tea' ? 'TBV' : 'CBV';
     print('Sending JSON: {$valveKey: "1"}');
     await serialService.sendJsonData({valveKey: "1"});
-
-    _checkTemperatureAndBrew(beverageType, durationSeconds.toInt(), setPoint);
-  }
-
-  void _checkTemperatureAndBrew(
-    String beverageType,
-    int totalSeconds,
-    double setPoint,
-  ) {
-    _brewingTimer?.cancel();
-    _brewingTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      int remaining = prefs.getInt('remainingSeconds') ?? 0;
-      int total = prefs.getInt('totalBrewSeconds') ?? totalSeconds;
-
-      if (remaining <= 0) {
-        timer.cancel();
-        _finishBrewing(beverageType);
-        return;
-      }
-
-      double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
-      String valveKey = beverageType == 'tea' ? 'TBV' : 'CBV';
-
-      if (currentTemp < setPoint - 5 && _isValveOpen) {
-        _isValveOpen = false;
-        print(
-          'Sending JSON: {$valveKey: "0"} - Pausing (Temp: $currentTemp < ${setPoint - 5})',
-        );
-        await serialService.sendJsonData({valveKey: "0"});
-      } else if (currentTemp >= setPoint && !_isValveOpen) {
-        _isValveOpen = true;
-        print(
-          'Sending JSON: {$valveKey: "1"} - Resuming (Temp: $currentTemp >= $setPoint)',
-        );
-        await serialService.sendJsonData({valveKey: "1"});
-      }
-
-      if (_isValveOpen) {
-        await prefs.setInt('remainingSeconds', remaining - 1);
-        if (mounted) {
-          setState(() {
-            _remainingBrewSeconds = remaining - 1;
-            _totalBrewSeconds = total;
-            if (total > 0) {
-              _brewingPercentage = ((total - (remaining - 1)) / total * 100)
-                  .clamp(0, 100)
-                  .toInt();
-            }
-          });
-        }
-        print('Timer running: ${remaining - 1}s remaining');
-      } else {
-        print('Timer paused: ${remaining}s remaining');
-      }
-    });
-  }
-
-  void _finishBrewing(String beverageType) async {
-    String valveKey = beverageType == 'tea' ? 'TBV' : 'CBV';
-    print('Sending JSON: {$valveKey: "0"} - Brewing Complete');
-    await serialService.sendJsonData({valveKey: "0"});
-
-    _isValveOpen = false;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('currentBrewing');
-    await prefs.remove('remainingSeconds');
-    await prefs.remove('totalBrewSeconds');
-    await prefs.remove('brewSetPoint');
-
-    if (mounted) {
-      setState(() {
-        _currentlyBrewing = null;
-        _brewingPercentage = 0;
-        _remainingBrewSeconds = 0;
-        _totalBrewSeconds = 0;
-      });
-    }
   }
 
   Future<void> _saveSettings() async {
@@ -1183,7 +1180,13 @@ class _AdminpanelState extends State<Adminpanel>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  Cleaningscreen(CleanTiming: 15),
+                                  Cleaningscreen(
+                                    cleanTiming: 15,
+                                    cleaningType: 'All',
+                                    valveOnTime: 0,
+                                    pumpOnTime: 0,
+                                    pumpSpeed: 0,
+                                  ),
                             ),
                           );
                         },
@@ -2417,6 +2420,14 @@ class _AdminpanelState extends State<Adminpanel>
                       const SizedBox(width: 16),
                       ElevatedButton(
                         onPressed: () {
+                          _startAUTOBrewing(
+                            'coffee',
+                            _coffeOnTimeValue,
+                            _coffeeTemp,
+                          );
+                          _showSnackBar(
+                            'Coffee Brewing Started at $_coffeeTemp°C for $_coffeOnTimeValue sec',
+                          );
                           print('Coffee Temp Set: $_coffeeTemp°C');
                         },
                         child: const Text(
@@ -2483,6 +2494,10 @@ class _AdminpanelState extends State<Adminpanel>
                       const SizedBox(width: 16),
                       ElevatedButton(
                         onPressed: () {
+                          _startAUTOBrewing('tea', _teaOnTimeValue, _teaTemp);
+                          _showSnackBar(
+                            'Tea Brewing Started at $_teaTemp°C for $_teaOnTimeValue sec',
+                          );
                           print('Tea Temp Set:: $_teaTemp°C');
                         },
                         child: const Text(
@@ -2662,7 +2677,7 @@ class _AdminpanelState extends State<Adminpanel>
                       Spacer(),
                       ElevatedButton(
                         onPressed: () async {
-                          int brewValveOnTime = _teaCleanDelay ~/ 10;
+                          int brewValveOnTime = _teaCleanDelay;
                           int pumpOnTime = _teaClean;
                           int totalSeconds = brewValveOnTime + pumpOnTime;
                           SharedPreferences prefs =
@@ -2675,24 +2690,15 @@ class _AdminpanelState extends State<Adminpanel>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  Cleaningscreen(CleanTiming: totalSeconds),
+                                  Cleaningscreen(
+                                    cleanTiming: totalSeconds,
+                                    cleaningType: 'Tea',
+                                    valveOnTime: brewValveOnTime,
+                                    pumpOnTime: pumpOnTime,
+                                    pumpSpeed: _teaPumpSpeed.toInt(),
+                                  ),
                             ),
                           );
-
-                          await SerialService().sendJsonData({"TBV": "1"});
-                          await Future.delayed(
-                            Duration(seconds: brewValveOnTime),
-                          );
-                          await SerialService().sendJsonData({"TBV": "0"});
-                          await SerialService().sendJsonData({
-                            "TP_FWD": "${_teaPumpSpeed.toInt()}",
-                            "TP_REV": "0",
-                          });
-                          await Future.delayed(Duration(seconds: pumpOnTime));
-                          await SerialService().sendJsonData({
-                            "TP_FWD": "0",
-                            "TP_REV": "0",
-                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
@@ -2732,7 +2738,7 @@ class _AdminpanelState extends State<Adminpanel>
                       Spacer(),
                       ElevatedButton(
                         onPressed: () async {
-                          int brewValveOnTime = _coffeeCleanDelay ~/ 10;
+                          int brewValveOnTime = _coffeeCleanDelay;
                           int pumpOnTime = _coffeeClean;
                           int totalSeconds = brewValveOnTime + pumpOnTime;
                           SharedPreferences prefs =
@@ -2745,24 +2751,15 @@ class _AdminpanelState extends State<Adminpanel>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  Cleaningscreen(CleanTiming: totalSeconds),
+                                  Cleaningscreen(
+                                    cleanTiming: totalSeconds,
+                                    cleaningType: 'Coffee',
+                                    valveOnTime: brewValveOnTime,
+                                    pumpOnTime: pumpOnTime,
+                                    pumpSpeed: _coffeePumpSpeed.toInt(),
+                                  ),
                             ),
                           );
-
-                          await SerialService().sendJsonData({"CBV": "1"});
-                          await Future.delayed(
-                            Duration(seconds: brewValveOnTime),
-                          );
-                          await SerialService().sendJsonData({"CBV": "0"});
-                          await SerialService().sendJsonData({
-                            "CP_FWD": "${_coffeePumpSpeed.toInt()}",
-                            "CP_REV": "0",
-                          });
-                          await Future.delayed(Duration(seconds: pumpOnTime));
-                          await SerialService().sendJsonData({
-                            "CP_FWD": "0",
-                            "CP_REV": "0",
-                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.brown,
@@ -2815,19 +2812,15 @@ class _AdminpanelState extends State<Adminpanel>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  Cleaningscreen(CleanTiming: totalSendSeconds),
+                                  Cleaningscreen(
+                                    cleanTiming: totalSendSeconds,
+                                    cleaningType: 'Milk',
+                                    valveOnTime: 0,
+                                    pumpOnTime: pumpOnTime,
+                                    pumpSpeed: _milkPumpSpeed.toInt(),
+                                  ),
                             ),
                           );
-
-                          await SerialService().sendJsonData({
-                            "MAV": "1",
-                            "MP_FWD": "${_milkPumpSpeed.toInt()}",
-                          });
-                          await Future.delayed(Duration(seconds: pumpOnTime));
-                          await SerialService().sendJsonData({
-                            "MAV": "0",
-                            "MP_FWD": "0",
-                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -3015,7 +3008,7 @@ class _AdminpanelState extends State<Adminpanel>
             ),
             ElevatedButton(
               onPressed: () async {
-                int brewValveOnTime = delayValue ~/ 10;
+                int brewValveOnTime = delayValue;
                 int pumpOnTime = value;
                 String type = label.split(' ')[0];
                 int totalSeconds = brewValveOnTime + pumpOnTime;
@@ -3027,52 +3020,15 @@ class _AdminpanelState extends State<Adminpanel>
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        Cleaningscreen(CleanTiming: totalSeconds),
+                        Cleaningscreen(
+                          cleanTiming: totalSeconds,
+                          cleaningType: type,
+                          valveOnTime: brewValveOnTime,
+                          pumpOnTime: pumpOnTime,
+                          pumpSpeed: type == 'Tea' ? _teaPumpSpeed.toInt() : type == 'Coffee' ? _coffeePumpSpeed.toInt() : _milkPumpSpeed.toInt(),
+                        ),
                   ),
                 );
-
-                if (type == 'Tea') {
-                  SerialService().sendJsonData({"TBV": "1"}).then((_) async {
-                    await Future.delayed(Duration(seconds: brewValveOnTime));
-                    await SerialService().sendJsonData({"TBV": "0"});
-                    await SerialService().sendJsonData({
-                      "TP_FWD": "${_teaPumpSpeed.toInt()}",
-                      "TP_REV": "0",
-                    });
-                    await Future.delayed(Duration(seconds: pumpOnTime));
-                    await SerialService().sendJsonData({
-                      "TP_FWD": "0",
-                      "TP_REV": "0",
-                    });
-                  });
-                } else if (type == 'Coffee') {
-                  SerialService().sendJsonData({"CBV": "1"}).then((_) async {
-                    await Future.delayed(Duration(seconds: brewValveOnTime));
-                    await SerialService().sendJsonData({"CBV": "0"});
-                    await SerialService().sendJsonData({
-                      "CP_FWD": "${_coffeePumpSpeed.toInt()}",
-                      "CP_REV": "0",
-                    });
-                    await Future.delayed(Duration(seconds: pumpOnTime));
-                    await SerialService().sendJsonData({
-                      "CP_FWD": "0",
-                      "CP_REV": "0",
-                    });
-                  });
-                } else if (type == 'Milk') {
-                  SerialService()
-                      .sendJsonData({
-                        "MAV": "1",
-                        "MP_FWD": "${_milkPumpSpeed.toInt()}",
-                      })
-                      .then((_) async {
-                        await Future.delayed(Duration(seconds: pumpOnTime));
-                        await SerialService().sendJsonData({
-                          "MAV": "0",
-                          "MP_FWD": "0",
-                        });
-                      });
-                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
