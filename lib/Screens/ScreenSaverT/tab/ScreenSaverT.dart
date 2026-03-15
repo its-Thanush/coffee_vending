@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:coffee_vending/allImports.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../Widgets/SerialCommunication.dart';
 
 class ScreenSaverWrapper extends StatefulWidget {
   const ScreenSaverWrapper({super.key});
@@ -69,6 +72,64 @@ class _ScreenSaverState extends State<ScreenSaver> {
     'assets/images/view-coffee-cup-with-roasted-coffee-beans.jpg',
     'assets/images/view-fresh-coffee-cup.jpg',
   ];
+
+  Timer? _floatWarningTimer;
+  double _targetTemp = 0.0;
+  final SerialService serialService = SerialService();
+
+  Future<void> _loadTargetTemp() async {
+    final prefs = await SharedPreferences.getInstance();
+    double coffeeTemp = prefs.getDouble('coffeeTemp') ?? 0.0;
+    double teaTemp = prefs.getDouble('teaTemp') ?? 0.0;
+    if (mounted) {
+      setState(() {
+        _targetTemp = coffeeTemp > teaTemp ? coffeeTemp : teaTemp;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTargetTemp();
+    
+    serialService.addTempListener(_tempListener);
+    serialService.addFloatListener(_floatListener);
+  }
+
+  void _tempListener(String temp) {
+    double currentT = double.tryParse(temp) ?? 0.0;
+    if (currentT > _targetTemp) {
+      serialService.sendJsonData({"SETTEMP": "0"});
+    } else {
+      serialService.sendJsonData({"SETTEMP": _targetTemp});
+    }
+  }
+
+  void _floatListener(String float) {
+    print("ScreenSaver----float--->"+float);
+    if (float == "1") {
+      if (_floatWarningTimer == null || !_floatWarningTimer!.isActive) {
+        print("--ScreenSaver---float--=1=>");
+        _floatWarningTimer = Timer(const Duration(seconds: 120), () {
+          serialService.sendJsonData({"SETTEMP": "0"});
+        });
+      }
+    } else if (float == "0") {
+      print("--ScreenSaver---float--=0=>");
+      _floatWarningTimer?.cancel();
+      _floatWarningTimer = null;
+      serialService.sendJsonData({"SETTEMP": _targetTemp});
+    }
+  }
+
+  @override
+  void dispose() {
+    serialService.removeTempListener(_tempListener);
+    serialService.removeFloatListener(_floatListener);
+    _floatWarningTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

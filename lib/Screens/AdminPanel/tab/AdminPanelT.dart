@@ -185,7 +185,7 @@ class _AdminpanelState extends State<Adminpanel>
 
   String _companyName = '';
   String CleanAll = '';
-  int _configDelay = 0;
+  int _configDelay = 120;
 
   int _teaCleanDelay = 0;
   int _coffeeCleanDelay = 0;
@@ -208,9 +208,23 @@ class _AdminpanelState extends State<Adminpanel>
   int _brewingPercentage = 0;
   String? _currentlyBrewing;
 
-  @override
+  Timer? _floatWarningTimer;
+  double _targetTemp = 0.0;
+
+  Future<void> _loadTargetTemp() async {
+    final prefs = await SharedPreferences.getInstance();
+    double coffeeTemp = prefs.getDouble('coffeeTemp') ?? 0.0;
+    double teaTemp = prefs.getDouble('teaTemp') ?? 0.0;
+    if (mounted) {
+      setState(() {
+        _targetTemp = coffeeTemp > teaTemp ? coffeeTemp : teaTemp;
+      });
+    }
+  }
+
   void initState() {
     super.initState();
+    _loadTargetTemp();
     int tabCount = widget.userType == 'staff' ? 3 : 7;
     _tabController = TabController(length: tabCount, vsync: this);
     _loadSettings();
@@ -223,13 +237,50 @@ class _AdminpanelState extends State<Adminpanel>
 
     _startBrewingPollTimer();
 
-    serialService.onTempReceived = (String temp) {
+    serialService.addTempListener(_tempListener);
+    serialService.addFloatListener(_floatListener);
+  }
+
+  void _tempListener(String temp) {
+    if (mounted) {
       setState(() {
         _currentTemp = temp;
         _tempError = false;
       });
       _resetTempTimeout();
-    };
+    }
+
+    double currentT = double.tryParse(temp) ?? 0.0;
+    if (currentT > _targetTemp) {
+      serialService.sendJsonData({"SETTEMP": "0"});
+    } else {
+      serialService.sendJsonData({"SETTEMP": _targetTemp});
+    }
+  }
+
+  void _floatListener(String float) {
+    print("AdminPanel----float--->"+float);
+    if (float == "1") {
+      if (_floatWarningTimer == null || !_floatWarningTimer!.isActive) {
+        _floatWarningTimer = Timer(const Duration(seconds: 120), () {
+          serialService.sendJsonData({"SETTEMP": "0"});
+        });
+      }
+    } else if (float == "0") {
+      _floatWarningTimer?.cancel();
+      _floatWarningTimer = null;
+
+      serialService.sendJsonData({"SETTEMP": _targetTemp});
+    }
+  }
+
+  @override
+  void dispose() {
+    serialService.removeTempListener(_tempListener);
+    serialService.removeFloatListener(_floatListener);
+    _tabController.dispose();
+    _brewingTimer?.cancel();
+    super.dispose();
   }
 
   void _startTempTimeout() {
@@ -335,12 +386,6 @@ class _AdminpanelState extends State<Adminpanel>
     _startTempTimeout();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _brewingTimer?.cancel();
-    super.dispose();
-  }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -463,7 +508,8 @@ class _AdminpanelState extends State<Adminpanel>
       _coffeePump = prefs.getInt('coffeePump') ?? 5;
 
       _companyName = prefs.getString('companyName') ?? '';
-      _configDelay = prefs.getInt('configDelay') ?? 0;
+      int? savedConfigDelay = prefs.getInt('configDelay');
+      _configDelay = (savedConfigDelay == null || savedConfigDelay == 0) ? 120 : savedConfigDelay;
 
       _teaPumpSpeed = prefs.getDouble('teaPumpSpeed') ?? 120.0;
       _coffeePumpSpeed = prefs.getDouble('coffeePumpSpeed') ?? 120.0;

@@ -10,11 +10,48 @@ class SerialService {
 
   UsbPort? _port;
   bool isConnected = false;
+
+  final List<Function(bool)> _connectionListeners = [];
+  final List<Function(String)> _tempListeners = [];
+  final List<Function(String)> _floatListeners = [];
+
+  void addConnectionListener(Function(bool) listener) {
+    if (!_connectionListeners.contains(listener)) {
+      _connectionListeners.add(listener);
+    }
+  }
+
+  void removeConnectionListener(Function(bool) listener) {
+    _connectionListeners.remove(listener);
+  }
+
+  void addTempListener(Function(String) listener) {
+    if (!_tempListeners.contains(listener)) {
+      _tempListeners.add(listener);
+    }
+  }
+
+  void removeTempListener(Function(String) listener) {
+    _tempListeners.remove(listener);
+  }
+
+  void addFloatListener(Function(String) listener) {
+    if (!_floatListeners.contains(listener)) {
+      _floatListeners.add(listener);
+    }
+  }
+
+  void removeFloatListener(Function(String) listener) {
+    _floatListeners.remove(listener);
+  }
+
+  // Deprecated single-callbacks for backward compatibility during transition if any
   Function(bool)? onConnectionChanged;
   Function(String)? onTempReceived;
+  Function(String)? onFloatReceived;
+
   StreamSubscription<Uint8List>? _subscription;
   String _buffer = '';
-  Function(String)? onFloatReceived;
 
   Future<bool> connect() async {
     try {
@@ -95,9 +132,15 @@ class SerialService {
       if (jsonData['TEMP'] != null) {
         print("--------------TEmp---Receiving--------->"+jsonData['TEMP'].toString());
         onTempReceived?.call(jsonData['TEMP']);
+        for (var listener in _tempListeners) {
+          listener(jsonData['TEMP']);
+        }
       }
       if (jsonData['FLOAT'] != null) {
         onFloatReceived?.call(jsonData['FLOAT']);
+        for (var listener in _floatListeners) {
+          listener(jsonData['FLOAT']);
+        }
       }
     } catch (e) {
       print("Error parsing JSON: $e");
@@ -173,6 +216,9 @@ class SerialService {
       _port = null;
       isConnected = false;
       onConnectionChanged?.call(false);
+      for (var listener in _connectionListeners) {
+        listener(false);
+      }
       print("Disconnected");
     } catch (e) {
       print("Error disconnecting: $e");

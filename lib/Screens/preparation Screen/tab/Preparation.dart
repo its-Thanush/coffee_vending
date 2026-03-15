@@ -165,7 +165,7 @@ class _PreparationState extends State<Preparation> {
     final now = DateTime.now();
     if (mounted) {
       setState(() {
-        _currentTime = DateFormat('HH:mm:ss').format(now);
+        _currentTime = DateFormat('HH:mm a').format(now);
         _currentDate = DateFormat('EEEE, MMM d, yyyy').format(now);
       });
     }

@@ -60,10 +60,25 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   String? _currentlyBrewing;
   bool _isValveOpen = false;
 
+  Timer? _floatWarningTimer;
+  double _targetTemp = 0.0;
+
+  Future<void> _loadTargetTemp() async {
+    final prefs = await SharedPreferences.getInstance();
+    double coffeeTemp = prefs.getDouble('coffeeTemp') ?? 0.0;
+    double teaTemp = prefs.getDouble('teaTemp') ?? 0.0;
+    if (mounted) {
+      setState(() {
+        _targetTemp = coffeeTemp > teaTemp ? coffeeTemp : teaTemp;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     bloc = BlocProvider.of<MainScreenBloc>(context);
+    _loadTargetTemp();
     _loadSettings();
     _startBrewingPollTimer();
     bloc.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -80,17 +95,40 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       });
     };
 
-    bloc.serialService.onTempReceived = (String temp) {
-      print("Mainscreen----temp--->"+temp);
-      setState(() {
-        _currentTemp = temp;
-        _tempError = false;
-      });
-      _resetTempTimeout();
-    };
-    bloc.serialService.onFloatReceived =(String float){
-      print("Mainscreen----float--->"+float);
-    };
+    bloc.serialService.addTempListener((String temp) {
+      print("Mainscreen----temp--->" + temp);
+      if (mounted) {
+        setState(() {
+          _currentTemp = temp;
+          _tempError = false;
+        });
+        _resetTempTimeout();
+      }
+
+      double currentT = double.tryParse(temp) ?? 0.0;
+      if (currentT > _targetTemp) {
+        bloc.serialService.sendJsonData({"SETTEMP": "0"});
+      } else {
+        bloc.serialService.sendJsonData({"SETTEMP": _targetTemp});
+      }
+    });
+
+    bloc.serialService.addFloatListener((String float) {
+      print("Mainscreen----float--->" + float);
+      if (float == "1") {
+        if (_floatWarningTimer == null || !_floatWarningTimer!.isActive) {
+          print("--Mainscreen---float--=1=>");
+          _floatWarningTimer = Timer(const Duration(seconds: 120), () {
+            bloc.serialService.sendJsonData({"SETTEMP": "0"});
+          });
+        }
+      } else if (float == "0") {
+        print("--Mainscreen---float--=0=>");
+        _floatWarningTimer?.cancel();
+        _floatWarningTimer = null;
+        bloc.serialService.sendJsonData({"SETTEMP": _targetTemp});
+      }
+    });
 
     bloc.connectionCheckTimer = Timer.periodic(const Duration(seconds: 3), (
       timer,
@@ -106,7 +144,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   void _startBrewingPollTimer() {
     _brewProgressTimer?.cancel();
-    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? brewing = prefs.getString('currentBrewing');
       int remaining = prefs.getInt('remainingSeconds') ?? 0;
@@ -130,7 +170,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         if (mounted) {
           setState(() {
             _currentlyBrewing = brewing;
-            _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
+            _brewingPercentage = ((total - remaining) / total * 100)
+                .clamp(0, 100)
+                .toInt();
           });
         }
         return;
@@ -155,7 +197,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       if (isValveOpen) {
         remaining -= 1;
         await prefs.setInt('remainingSeconds', remaining);
-        
+
         if (remaining <= 0) {
           await prefs.setBool('isValveOpen', false);
           await bloc.serialService.sendJsonData({valveKey: "0"});
@@ -164,7 +206,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
           await prefs.remove('totalBrewSeconds');
           await prefs.remove('brewSetPoint');
           await prefs.remove('isValveOpen');
-          
+
           if (mounted) {
             setState(() {
               _currentlyBrewing = null;
@@ -178,7 +220,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       if (mounted) {
         setState(() {
           _currentlyBrewing = brewing;
-          _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
+          _brewingPercentage = ((total - remaining) / total * 100)
+              .clamp(0, 100)
+              .toInt();
         });
       }
     });
@@ -554,9 +598,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     hour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
 
     String minute = date.minute.toString().padLeft(2, '0');
-    String second = date.second.toString().padLeft(2, '0');
 
-    return '$hour:$minute:$second $period';
+    return '$hour:$minute $period';
   }
 
   Future<void> _sendBrewCommand() async {
@@ -2160,25 +2203,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                         ),
                       );
 
-                      // Re-register callbacks because SerialService is a singleton
-                      // and AdminPanelT might have overwritten them.
-                      bloc.serialService.onConnectionChanged = (bool status) {
-                        if (mounted) {
-                          setState(() {
-                            bloc.isNodeMCUOnline = status;
-                          });
-                        }
-                      };
-
-                      bloc.serialService.onTempReceived = (String temp) {
-                        if (mounted) {
-                          setState(() {
-                            _currentTemp = temp;
-                            _tempError = false;
-                          });
-                          _resetTempTimeout();
-                        }
-                      };
+                      // No longer needed to re-register callbacks because we use addTempListener and addFloatListener
+                      // which do not overwrite each other. Removing this re-registration block.
                     },
                     icon: Icon(
                       Icons.admin_panel_settings,
