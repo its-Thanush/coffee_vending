@@ -740,6 +740,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting cpDelay: $cpDelay seconds");
     await Future.delayed(Duration(seconds: cpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("cpDelay complete");
 
     final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
@@ -753,6 +754,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting cpOnTime with forward: $coffeeOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: coffeeOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("cpOnTime complete");
 
     print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
@@ -765,6 +767,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -779,6 +782,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -794,6 +798,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -801,6 +806,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -824,6 +830,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting cpDelay: $cpDelay seconds");
     await Future.delayed(Duration(seconds: cpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("cpDelay complete");
 
     final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
@@ -837,6 +844,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting cpOnTime with forward: $coffeeOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: coffeeOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("cpOnTime complete");
 
     print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
@@ -852,6 +860,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -866,6 +875,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -881,6 +891,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -888,6 +899,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -909,6 +921,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ctpDelay: $ctpDelay seconds");
     await Future.delayed(Duration(seconds: ctpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("ctpDelay complete");
 
     final coffeeOnTimeWithForward = (ctpOnTime + _coffeePumpForwardTime)
@@ -923,6 +936,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ctpOnTime with forward: $coffeeOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: coffeeOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("ctpOnTime complete");
 
     print("Sending Coffee Tea Pump OFF: {CP_FWD: 0, CP_REV: 0}");
@@ -935,6 +949,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -942,6 +957,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -965,6 +981,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpDelay: $ttpDelay seconds");
     await Future.delayed(Duration(seconds: ttpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
@@ -978,6 +995,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: teaOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("ttpOnTime complete");
 
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
@@ -990,6 +1008,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -1004,6 +1023,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -1019,6 +1039,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -1026,6 +1047,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -1049,6 +1071,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpDelay: $ttpDelay seconds");
     await Future.delayed(Duration(seconds: ttpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
@@ -1062,6 +1085,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: teaOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("ttpOnTime complete");
 
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
@@ -1074,6 +1098,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -1088,6 +1113,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -1103,6 +1129,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -1110,6 +1137,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -1131,6 +1159,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpDelay: $ttpDelay seconds");
     await Future.delayed(Duration(seconds: ttpDelay));
+    if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
     final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
@@ -1144,6 +1173,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting ttpOnTime with forward: $teaOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: teaOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("ttpOnTime complete");
 
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
@@ -1156,6 +1186,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -1163,6 +1194,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -1184,6 +1216,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -1191,6 +1224,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -1198,6 +1232,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -1212,6 +1247,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -1242,6 +1278,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkDelay: $milkDelay seconds");
     await Future.delayed(Duration(seconds: milkDelay));
+    if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
     final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
@@ -1256,6 +1293,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting milkOnTime with forward: $milkOnTimeWithForward seconds");
     await Future.delayed(Duration(seconds: milkOnTimeWithForward));
+    if (!bloc.isBrewAnimating) return;
     print("milkOnTime complete");
 
     print("Sending Milk Pump OFF: {MAV: 0, MP_FWD: 0, MP_REV: 0}");
@@ -1272,6 +1310,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterDelay: $waterDelay seconds");
     await Future.delayed(Duration(seconds: waterDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterDelay complete");
 
     print("Sending Hot Water Valve ON: {MHWV: 1}");
@@ -1279,6 +1318,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterOnTime: $waterOnTime seconds");
     await Future.delayed(Duration(seconds: waterOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterOnTime complete");
 
     print("Sending Hot Water Valve OFF: {MHWV: 0}");
@@ -1298,6 +1338,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterValveDelay: $waterValveDelay seconds");
     await Future.delayed(Duration(seconds: waterValveDelay));
+    if (!bloc.isBrewAnimating) return;
     print("waterValveDelay complete");
 
     print("Sending Hot Water Valve ON: {HWV: 1}");
@@ -1305,6 +1346,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
     print("Waiting waterValveOnTime: $waterValveOnTime seconds");
     await Future.delayed(Duration(seconds: waterValveOnTime));
+    if (!bloc.isBrewAnimating) return;
     print("waterValveOnTime complete");
 
     print("Sending Hot Water Valve OFF: {HWV: 0}");
