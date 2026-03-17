@@ -202,11 +202,18 @@ class _AdminpanelState extends State<Adminpanel>
   final SerialService serialService = SerialService();
 
   Timer? _brewingTimer;
-  bool _isValveOpen = false;
-  int _totalBrewSeconds = 0;
-  int _remainingBrewSeconds = 0;
-  int _brewingPercentage = 0;
-  String? _currentlyBrewing;
+
+  bool _isCoffeeValveOpen = false;
+  int _coffeeTotalBrewSeconds = 0;
+  int _coffeeRemainingSeconds = 0;
+  int _coffeeBrewingPercentage = 0;
+  bool _isCoffeeBrewing = false;
+
+  bool _isTeaValveOpen = false;
+  int _teaTotalBrewSeconds = 0;
+  int _teaRemainingSeconds = 0;
+  int _teaBrewingPercentage = 0;
+  bool _isTeaBrewing = false;
 
   Timer? _floatWarningTimer;
   double _targetTemp = 0.0;
@@ -297,86 +304,171 @@ class _AdminpanelState extends State<Adminpanel>
     _brewingTimer?.cancel();
     _brewingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? brewing = prefs.getString('currentBrewing');
-      int remaining = prefs.getInt('remainingSeconds') ?? 0;
-      int total = prefs.getInt('totalBrewSeconds') ?? 0;
-      double setPoint = prefs.getDouble('brewSetPoint') ?? 0.0;
-
-      if (brewing == null || remaining <= 0 || total <= 0) {
-        if (mounted && _currentlyBrewing != null) {
+      
+      // COFFEE LOGIC
+      bool isCoffeeBrewing = prefs.getBool('isCoffeeBrewing') ?? false;
+      int coffeeRemaining = prefs.getInt('coffeeRemainingSeconds') ?? 0;
+      int coffeeTotal = prefs.getInt('coffeeTotalBrewSeconds') ?? 0;
+      double coffeeSetPoint = prefs.getDouble('coffeeBrewSetPoint') ?? 0.0;
+      
+      if (!isCoffeeBrewing || coffeeRemaining <= 0 || coffeeTotal <= 0) {
+        if (mounted && _isCoffeeBrewing) {
           setState(() {
-            _currentlyBrewing = null;
-            _brewingPercentage = 0;
-            _remainingBrewSeconds = 0;
-            _totalBrewSeconds = 0;
+            _isCoffeeBrewing = false;
+            _coffeeBrewingPercentage = 0;
+            _coffeeRemainingSeconds = 0;
+            _coffeeTotalBrewSeconds = 0;
           });
         }
-        return;
-      }
-
-      int now = DateTime.now().millisecondsSinceEpoch;
-      int lastUpdate = prefs.getInt('lastBrewUpdate') ?? 0;
-
-      if (now - lastUpdate < 800) {
-        if (mounted) {
-          setState(() {
-            _currentlyBrewing = brewing;
-            _totalBrewSeconds = total;
-            _remainingBrewSeconds = remaining;
-            _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
-          });
-        }
-        return;
-      }
-
-      await prefs.setInt('lastBrewUpdate', now);
-
-      double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
-      String valveKey = brewing == 'tea' ? 'TBV' : 'CBV';
-      bool isValveOpen = prefs.getBool('isValveOpen') ?? false;
-
-      if (currentTemp < setPoint - 5 && isValveOpen) {
-        isValveOpen = false;
-        await prefs.setBool('isValveOpen', false);
-        await serialService.sendJsonData({valveKey: "0"});
-      } else if (currentTemp >= setPoint && !isValveOpen) {
-        isValveOpen = true;
-        await prefs.setBool('isValveOpen', true);
-        await serialService.sendJsonData({valveKey: "1"});
-      }
-
-      if (isValveOpen) {
-        remaining -= 1;
-        await prefs.setInt('remainingSeconds', remaining);
+      } else {
+        int now = DateTime.now().millisecondsSinceEpoch;
+        int lastCoffeeUpdate = prefs.getInt('lastCoffeeBrewUpdate') ?? 0;
         
-        if (remaining <= 0) {
-          await prefs.setBool('isValveOpen', false);
-          await serialService.sendJsonData({valveKey: "0"});
-          await prefs.remove('currentBrewing');
-          await prefs.remove('remainingSeconds');
-          await prefs.remove('totalBrewSeconds');
-          await prefs.remove('brewSetPoint');
-          await prefs.remove('isValveOpen');
-          
+        if (now - lastCoffeeUpdate < 800) {
           if (mounted) {
             setState(() {
-              _currentlyBrewing = null;
-              _brewingPercentage = 0;
-              _remainingBrewSeconds = 0;
-              _totalBrewSeconds = 0;
+              _isCoffeeBrewing = true;
+              _coffeeTotalBrewSeconds = coffeeTotal;
+              _coffeeRemainingSeconds = coffeeRemaining;
+              _coffeeBrewingPercentage = ((coffeeTotal - coffeeRemaining) / coffeeTotal * 100).clamp(0, 100).toInt();
             });
           }
-          return;
+        } else {
+          await prefs.setInt('lastCoffeeBrewUpdate', now);
+          double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
+          bool isValveOpen = prefs.getBool('isCoffeeValveOpen') ?? false;
+          if (currentTemp < coffeeSetPoint - 5 && isValveOpen) {
+            isValveOpen = false;
+            await prefs.setBool('isCoffeeValveOpen', false);
+            await serialService.sendJsonData({"CBV": "0"});
+          } else if (currentTemp >= coffeeSetPoint && !isValveOpen) {
+            isValveOpen = true;
+            await prefs.setBool('isCoffeeValveOpen', true);
+            await serialService.sendJsonData({"CBV": "1"});
+          }
+          if (isValveOpen) {
+            coffeeRemaining -= 1;
+            await prefs.setInt('coffeeRemainingSeconds', coffeeRemaining);
+            if (coffeeRemaining <= 0) {
+              await prefs.setBool('isCoffeeValveOpen', false);
+              await serialService.sendJsonData({"CBV": "0"});
+              await prefs.remove('isCoffeeBrewing');
+              await prefs.remove('coffeeRemainingSeconds');
+              await prefs.remove('coffeeTotalBrewSeconds');
+              await prefs.remove('coffeeBrewSetPoint');
+              await prefs.remove('isCoffeeValveOpen');
+              if (mounted) {
+                setState(() {
+                  _isCoffeeBrewing = false;
+                  _coffeeBrewingPercentage = 0;
+                  _coffeeRemainingSeconds = 0;
+                  _coffeeTotalBrewSeconds = 0;
+                });
+              }
+            } else {
+              if (mounted) {
+                setState(() {
+                  _isCoffeeBrewing = true;
+                  _coffeeTotalBrewSeconds = coffeeTotal;
+                  _coffeeRemainingSeconds = coffeeRemaining;
+                  _coffeeBrewingPercentage = ((coffeeTotal - coffeeRemaining) / coffeeTotal * 100).clamp(0, 100).toInt();
+                });
+              }
+            }
+          } else {
+            if (mounted) {
+              setState(() {
+                _isCoffeeBrewing = true;
+                _coffeeTotalBrewSeconds = coffeeTotal;
+                _coffeeRemainingSeconds = coffeeRemaining;
+                _coffeeBrewingPercentage = ((coffeeTotal - coffeeRemaining) / coffeeTotal * 100).clamp(0, 100).toInt();
+              });
+            }
+          }
         }
       }
 
-      if (mounted) {
-        setState(() {
-          _currentlyBrewing = brewing;
-          _totalBrewSeconds = total;
-          _remainingBrewSeconds = remaining;
-          _brewingPercentage = ((total - remaining) / total * 100).clamp(0, 100).toInt();
-        });
+      // TEA LOGIC
+      bool isTeaBrewing = prefs.getBool('isTeaBrewing') ?? false;
+      int teaRemaining = prefs.getInt('teaRemainingSeconds') ?? 0;
+      int teaTotal = prefs.getInt('teaTotalBrewSeconds') ?? 0;
+      double teaSetPoint = prefs.getDouble('teaBrewSetPoint') ?? 0.0;
+      
+      if (!isTeaBrewing || teaRemaining <= 0 || teaTotal <= 0) {
+        if (mounted && _isTeaBrewing) {
+          setState(() {
+            _isTeaBrewing = false;
+            _teaBrewingPercentage = 0;
+            _teaRemainingSeconds = 0;
+            _teaTotalBrewSeconds = 0;
+          });
+        }
+      } else {
+        int now = DateTime.now().millisecondsSinceEpoch;
+        int lastTeaUpdate = prefs.getInt('lastTeaBrewUpdate') ?? 0;
+        
+        if (now - lastTeaUpdate < 800) {
+          if (mounted) {
+            setState(() {
+              _isTeaBrewing = true;
+              _teaTotalBrewSeconds = teaTotal;
+              _teaRemainingSeconds = teaRemaining;
+              _teaBrewingPercentage = ((teaTotal - teaRemaining) / teaTotal * 100).clamp(0, 100).toInt();
+            });
+          }
+        } else {
+          await prefs.setInt('lastTeaBrewUpdate', now);
+          double currentTemp = double.tryParse(_currentTemp.toString()) ?? 0.0;
+          bool isValveOpen = prefs.getBool('isTeaValveOpen') ?? false;
+          if (currentTemp < teaSetPoint - 5 && isValveOpen) {
+            isValveOpen = false;
+            await prefs.setBool('isTeaValveOpen', false);
+            await serialService.sendJsonData({"TBV": "0"});
+          } else if (currentTemp >= teaSetPoint && !isValveOpen) {
+            isValveOpen = true;
+            await prefs.setBool('isTeaValveOpen', true);
+            await serialService.sendJsonData({"TBV": "1"});
+          }
+          if (isValveOpen) {
+            teaRemaining -= 1;
+            await prefs.setInt('teaRemainingSeconds', teaRemaining);
+            if (teaRemaining <= 0) {
+              await prefs.setBool('isTeaValveOpen', false);
+              await serialService.sendJsonData({"TBV": "0"});
+              await prefs.remove('isTeaBrewing');
+              await prefs.remove('teaRemainingSeconds');
+              await prefs.remove('teaTotalBrewSeconds');
+              await prefs.remove('teaBrewSetPoint');
+              await prefs.remove('isTeaValveOpen');
+              if (mounted) {
+                setState(() {
+                  _isTeaBrewing = false;
+                  _teaBrewingPercentage = 0;
+                  _teaRemainingSeconds = 0;
+                  _teaTotalBrewSeconds = 0;
+                });
+              }
+            } else {
+              if (mounted) {
+                setState(() {
+                  _isTeaBrewing = true;
+                  _teaTotalBrewSeconds = teaTotal;
+                  _teaRemainingSeconds = teaRemaining;
+                  _teaBrewingPercentage = ((teaTotal - teaRemaining) / teaTotal * 100).clamp(0, 100).toInt();
+                });
+              }
+            }
+          } else {
+            if (mounted) {
+              setState(() {
+                _isTeaBrewing = true;
+                _teaTotalBrewSeconds = teaTotal;
+                _teaRemainingSeconds = teaRemaining;
+                _teaBrewingPercentage = ((teaTotal - teaRemaining) / teaTotal * 100).clamp(0, 100).toInt();
+              });
+            }
+          }
+        }
       }
     });
   }
@@ -627,27 +719,42 @@ class _AdminpanelState extends State<Adminpanel>
                       child: ElevatedButton(
                         onPressed: () async {
                           Navigator.of(dialogContext).pop();
-                          _brewingTimer?.cancel();
                           String valveKey = beverageType == 'tea'
                               ? 'TBV'
                               : 'CBV';
                           await serialService.sendJsonData({valveKey: "0"});
-                          _isValveOpen = false;
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
-                          await prefs.setBool('isValveOpen', false);
-                          await prefs.remove('currentBrewing');
-                          await prefs.remove('remainingSeconds');
-                          await prefs.remove('totalBrewSeconds');
-                          await prefs.remove('brewSetPoint');
-                          await prefs.remove('isValveOpen');
-                          if (mounted) {
-                            setState(() {
-                              _currentlyBrewing = null;
-                              _brewingPercentage = 0;
-                              _remainingBrewSeconds = 0;
-                              _totalBrewSeconds = 0;
-                            });
+                          if (beverageType == 'tea') {
+                            _isTeaValveOpen = false;
+                            await prefs.setBool('isTeaValveOpen', false);
+                            await prefs.remove('isTeaBrewing');
+                            await prefs.remove('teaRemainingSeconds');
+                            await prefs.remove('teaTotalBrewSeconds');
+                            await prefs.remove('teaBrewSetPoint');
+                            if (mounted) {
+                              setState(() {
+                                _isTeaBrewing = false;
+                                _teaBrewingPercentage = 0;
+                                _teaRemainingSeconds = 0;
+                                _teaTotalBrewSeconds = 0;
+                              });
+                            }
+                          } else {
+                            _isCoffeeValveOpen = false;
+                            await prefs.setBool('isCoffeeValveOpen', false);
+                            await prefs.remove('isCoffeeBrewing');
+                            await prefs.remove('coffeeRemainingSeconds');
+                            await prefs.remove('coffeeTotalBrewSeconds');
+                            await prefs.remove('coffeeBrewSetPoint');
+                            if (mounted) {
+                              setState(() {
+                                _isCoffeeBrewing = false;
+                                _coffeeBrewingPercentage = 0;
+                                _coffeeRemainingSeconds = 0;
+                                _coffeeTotalBrewSeconds = 0;
+                              });
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -708,26 +815,47 @@ class _AdminpanelState extends State<Adminpanel>
     double setPoint,
   ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('currentBrewing', beverageType);
-    await prefs.setInt('remainingSeconds', durationSeconds.toInt());
-    await prefs.setInt('totalBrewSeconds', durationSeconds.toInt());
-    await prefs.setDouble('brewSetPoint', setPoint);
+    if (beverageType == 'tea') {
+      await prefs.setBool('isTeaBrewing', true);
+      await prefs.setInt('teaRemainingSeconds', durationSeconds.toInt());
+      await prefs.setInt('teaTotalBrewSeconds', durationSeconds.toInt());
+      await prefs.setDouble('teaBrewSetPoint', setPoint);
 
-    if (mounted) {
-      setState(() {
-        _currentlyBrewing = beverageType;
-        _totalBrewSeconds = durationSeconds.toInt();
-        _remainingBrewSeconds = durationSeconds.toInt();
-        _brewingPercentage = 0;
-      });
+      if (mounted) {
+        setState(() {
+          _isTeaBrewing = true;
+          _teaTotalBrewSeconds = durationSeconds.toInt();
+          _teaRemainingSeconds = durationSeconds.toInt();
+          _teaBrewingPercentage = 0;
+        });
+      }
+
+      _isTeaValveOpen = true;
+      await prefs.setBool('isTeaValveOpen', true);
+      await prefs.setInt('lastTeaBrewUpdate', 0);
+      print('Sending JSON: {"TBV": "1"}');
+      await serialService.sendJsonData({"TBV": "1"});
+    } else {
+      await prefs.setBool('isCoffeeBrewing', true);
+      await prefs.setInt('coffeeRemainingSeconds', durationSeconds.toInt());
+      await prefs.setInt('coffeeTotalBrewSeconds', durationSeconds.toInt());
+      await prefs.setDouble('coffeeBrewSetPoint', setPoint);
+
+      if (mounted) {
+        setState(() {
+          _isCoffeeBrewing = true;
+          _coffeeTotalBrewSeconds = durationSeconds.toInt();
+          _coffeeRemainingSeconds = durationSeconds.toInt();
+          _coffeeBrewingPercentage = 0;
+        });
+      }
+
+      _isCoffeeValveOpen = true;
+      await prefs.setBool('isCoffeeValveOpen', true);
+      await prefs.setInt('lastCoffeeBrewUpdate', 0);
+      print('Sending JSON: {"CBV": "1"}');
+      await serialService.sendJsonData({"CBV": "1"});
     }
-
-    _isValveOpen = true;
-    await prefs.setBool('isValveOpen', true);
-    await prefs.setInt('lastBrewUpdate', 0);
-    String valveKey = beverageType == 'tea' ? 'TBV' : 'CBV';
-    print('Sending JSON: {$valveKey: "1"}');
-    await serialService.sendJsonData({valveKey: "1"});
   }
 
   Future<void> _saveSettings() async {
@@ -1608,7 +1736,7 @@ class _AdminpanelState extends State<Adminpanel>
                 ),
                 Gap(20),
                 Visibility(
-                  visible: _currentlyBrewing == 'coffee',
+                  visible: _isCoffeeBrewing,
                   child: GestureDetector(
                     onTap: () => _showCancelBrewingDialog('coffee'),
                     child: Container(
@@ -1619,7 +1747,7 @@ class _AdminpanelState extends State<Adminpanel>
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
                       child: CustomText(
-                        text: "Coffee Brewing $_brewingPercentage%",
+                        text: "Coffee Brewing $_coffeeBrewingPercentage%",
                         weight: FontWeight.w400,
                         color: Colors.white,
                       ),
@@ -1628,7 +1756,7 @@ class _AdminpanelState extends State<Adminpanel>
                 ),
                 Gap(10),
                 Visibility(
-                  visible: _currentlyBrewing == 'tea',
+                  visible: _isTeaBrewing,
                   child: GestureDetector(
                     onTap: () => _showCancelBrewingDialog('tea'),
                     child: Container(
@@ -1639,7 +1767,7 @@ class _AdminpanelState extends State<Adminpanel>
                       ),
                       padding: EdgeInsets.symmetric(horizontal: 7, vertical: 5),
                       child: CustomText(
-                        text: "Tea Brewing $_brewingPercentage%",
+                        text: "Tea Brewing $_teaBrewingPercentage%",
                         weight: FontWeight.w400,
                         color: Colors.green,
                       ),
