@@ -144,6 +144,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _startMilkReverseTimer();
     _startTeaReverseTimer();
     _startCoffeeReverseTimer();
+    _startBrewingPollTimer();
   }
 
   void _startBrewingPollTimer() {
@@ -478,10 +479,14 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
 
   Future<void> _checkNodeMCUConnection() async {
     bool connected = await bloc.serialService.checkConnection();
-    if (connected != bloc.isNodeMCUOnline) {
-      setState(() {
-        bloc.isNodeMCUOnline = connected;
-      });
+    if (!connected) {
+      await _initNodeMCUConnection();
+    } else if (connected != bloc.isNodeMCUOnline) {
+      if (mounted) {
+        setState(() {
+          bloc.isNodeMCUOnline = connected;
+        });
+      }
     }
   }
 
@@ -2341,6 +2346,11 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
                           builder: (context) => const adminScreenLogin(),
                         ),
                       );
+
+                      if (mounted) {
+                        _startBrewingPollTimer();
+                        setState(() {});
+                      }
 
                       // No longer needed to re-register callbacks because we use addTempListener and addFloatListener
                       // which do not overwrite each other. Removing this re-registration block.
