@@ -28,6 +28,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   late MainScreenBloc bloc;
   Timer? _brewProgressTimer;
   Timer? _brewTimer;
+  Timer? _adminBrewPollTimer;
 
   double _coffeePumpSpeed = 120.0;
   double _teaPumpSpeed = 120.0;
@@ -148,8 +149,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   }
 
   void _startBrewingPollTimer() {
-    _brewProgressTimer?.cancel();
-    _brewProgressTimer = Timer.periodic(const Duration(seconds: 1), (
+    _adminBrewPollTimer?.cancel();
+    _adminBrewPollTimer = Timer.periodic(const Duration(seconds: 1), (
       timer,
     ) async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -625,6 +626,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     bloc.connectionCheckTimer?.cancel();
     bloc.timer.cancel();
     _brewProgressTimer?.cancel();
+    _adminBrewPollTimer?.cancel();
     _brewTimer?.cancel();
     _tempTimeoutTimer?.cancel();
     _milkReverseCheckTimer?.cancel();
@@ -1408,6 +1410,16 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     }
 
     int brewSeconds = _calculateBrewTime(drinkKey);
+
+    if (drinkKey == 'strongCoffee' || drinkKey == 'liteCoffee' || drinkKey == 'blackCoffee') {
+      brewSeconds += _coffeePumpForwardTime.toInt();
+    }
+    if (drinkKey == 'strongTea' || drinkKey == 'liteTea' || drinkKey == 'blackTea') {
+      brewSeconds += _teaPumpForwardTime.toInt();
+    }
+    if (drinkKey == 'strongCoffee' || drinkKey == 'liteCoffee' || drinkKey == 'strongTea' || drinkKey == 'liteTea' || drinkKey == 'dipTea' || drinkKey == 'hotMilk') {
+      brewSeconds += _milkPumpForwardTime.toInt();
+    }
 
     print("Calculated brew time: $brewSeconds seconds");
 
