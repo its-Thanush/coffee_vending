@@ -3293,7 +3293,18 @@ class _AdminpanelState extends State<Adminpanel>
                         setState(() => _teaPumpOnTime = value),
                     onForwardTimeChanged: (value) =>
                         setState(() => _teaPumpForwardTime = value),
-                    onReverse: () {
+                    onReverse: () async {
+                      await SerialService().sendJsonData({
+                        "TP_FWD": "0",
+                        "TP_REV": "${_teaPumpSpeed.toInt()}",
+                      });
+                      await Future.delayed(
+                        Duration(seconds: _milkPumpOnTime.toInt()),
+                      );
+                      await SerialService().sendJsonData({
+                        "TP_FWD": "0",
+                        "TP_REV": "0",
+                      });
                       _showSnackBar('Tea Pump Reverse for $_teaPumpOnTime sec');
                       print('Tea Pump Reverse triggered');
                     },
@@ -3312,7 +3323,18 @@ class _AdminpanelState extends State<Adminpanel>
                         setState(() => _coffeePumpOnTime = value),
                     onForwardTimeChanged: (value) =>
                         setState(() => _coffeePumpForwardTime = value),
-                    onReverse: () {
+                    onReverse: () async {
+                      await SerialService().sendJsonData({
+                        "CP_FWD": "0",
+                        "CP_REV": "${_milkPumpSpeed.toInt()}",
+                      });
+                      await Future.delayed(
+                        Duration(seconds: _milkPumpOnTime.toInt()),
+                      );
+                      await SerialService().sendJsonData({
+                        "CP_FWD": "0",
+                        "CP_REV": "0",
+                      });
                       _showSnackBar(
                         'Coffee Pump Reverse for $_coffeePumpOnTime sec',
                       );
