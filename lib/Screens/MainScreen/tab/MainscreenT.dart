@@ -41,15 +41,18 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
   double _milkPumpDelay = 0.0;
   double _milkPumpOnTime = 0.0;
   double _milkPumpForwardTime = 0.0;
+  double _milkPumpPendingForwardTime = 0.0;
   int? _lastMilkUsedTime;
   Timer? _milkReverseCheckTimer;
 
   double _teaPumpForwardTime = 0.0;
+  double _teaPumpPendingForwardTime = 0.0;
   double _teaPumpOnTime = 0.0;
   double _teaPumpDelay = 0.0;
   int? _lastTeaUsedTime;
 
   double _coffeePumpForwardTime = 0.0;
+  double _coffeePumpPendingForwardTime = 0.0;
   double _coffeePumpOnTime = 0.0;
   double _coffeePumpDelay = 0.0;
   int? _lastCoffeeUsedTime;
@@ -516,10 +519,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         int elapsedSeconds =
             DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastMilkUsedTime!;
         if (elapsedSeconds >= _milkPumpDelay) {
-          await _executeMilkReverse();
           _lastMilkUsedTime = null;
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('lastMilkUsedTime');
+          await _executeMilkReverse();
         }
       }
     });
@@ -537,9 +540,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_FWD": "0",
       "MP_REV": "0",
     });
-    _milkPumpForwardTime = 0.0;
+    _milkPumpPendingForwardTime = _milkPumpForwardTime;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('milkPumpForwardTime', 0.0);
+    await prefs.setDouble('milkPumpPendingForwardTime', _milkPumpForwardTime);
   }
 
   Future<void> _updateMilkUsageTime() async {
@@ -557,10 +560,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         int elapsedSeconds =
             DateTime.now().millisecondsSinceEpoch ~/ 1000 - _lastTeaUsedTime!;
         if (elapsedSeconds >= _teaPumpDelay) {
-          await _executeTeaReverse();
           _lastTeaUsedTime = null;
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('lastTeaUsedTime');
+          await _executeTeaReverse();
         }
       }
     });
@@ -576,10 +579,10 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
             DateTime.now().millisecondsSinceEpoch ~/ 1000 -
             _lastCoffeeUsedTime!;
         if (elapsedSeconds >= _coffeePumpDelay) {
-          await _executeCoffeeReverse();
           _lastCoffeeUsedTime = null;
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('lastCoffeeUsedTime');
+          await _executeCoffeeReverse();
         }
       }
     });
@@ -592,9 +595,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     });
     await Future.delayed(Duration(seconds: _teaPumpOnTime.toInt()));
     await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
-    _teaPumpForwardTime = 0.0;
+    _teaPumpPendingForwardTime = _teaPumpForwardTime;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('teaPumpForwardTime', 0.0);
+    await prefs.setDouble('teaPumpPendingForwardTime', _teaPumpForwardTime);
   }
 
   Future<void> _executeCoffeeReverse() async {
@@ -604,9 +607,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     });
     await Future.delayed(Duration(seconds: _coffeePumpOnTime.toInt()));
     await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
-    _coffeePumpForwardTime = 0.0;
+    _coffeePumpPendingForwardTime = _coffeePumpForwardTime;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('coffeePumpForwardTime', 0.0);
+    await prefs.setDouble('coffeePumpPendingForwardTime', _coffeePumpForwardTime);
   }
 
   Future<void> _updateTeaUsageTime() async {
@@ -750,7 +753,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("cpDelay complete");
 
-    final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
+    final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpPendingForwardTime).toInt();
     print(
       "Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds",
     );
@@ -767,9 +770,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
     await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
 
-    _coffeePumpForwardTime = cpOnTime.toDouble();
+    _coffeePumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime);
+    await prefs.setDouble('coffeePumpPendingForwardTime', 0.0);
     await _updateCoffeeUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -777,7 +780,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -799,8 +802,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    _milkPumpPendingForwardTime = 0.0;
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -840,7 +843,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("cpDelay complete");
 
-    final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpForwardTime).toInt();
+    final coffeeOnTimeWithForward = (cpOnTime + _coffeePumpPendingForwardTime).toInt();
     print(
       "Sending Coffee Pump ON with forward time: $coffeeOnTimeWithForward seconds",
     );
@@ -857,12 +860,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Coffee Pump OFF: {CP_FWD: 0, CP_REV: 0}");
     await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
 
-    _coffeePumpForwardTime = cpOnTime.toDouble();
+    _coffeePumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(
-      'coffeePumpForwardTime',
-      _coffeePumpForwardTime + cpOnTime.toDouble(),
-    );
+    await prefs.setDouble('coffeePumpPendingForwardTime', 0.0);
     await _updateCoffeeUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -870,7 +870,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -892,8 +892,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    _milkPumpPendingForwardTime = 0.0;
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -931,7 +931,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("ctpDelay complete");
 
-    final coffeeOnTimeWithForward = (ctpOnTime + _coffeePumpForwardTime)
+    final coffeeOnTimeWithForward = (ctpOnTime + _coffeePumpPendingForwardTime)
         .toInt();
     print(
       "Sending Coffee Tea Pump ON with forward time: $coffeeOnTimeWithForward seconds",
@@ -949,9 +949,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Coffee Tea Pump OFF: {CP_FWD: 0, CP_REV: 0}");
     await bloc.serialService.sendJsonData({"CP_FWD": "0", "CP_REV": "0"});
 
-    _coffeePumpForwardTime = ctpOnTime.toDouble();
+    _coffeePumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('coffeePumpForwardTime', _coffeePumpForwardTime);
+    await prefs.setDouble('coffeePumpPendingForwardTime', 0.0);
     await _updateCoffeeUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -991,7 +991,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
-    final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
+    final teaOnTimeWithForward = (ttpOnTime + _teaPumpPendingForwardTime).toInt();
     print(
       "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
     );
@@ -1008,9 +1008,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
     await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
 
-    _teaPumpForwardTime = ttpOnTime.toDouble();
+    _teaPumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('teaPumpForwardTime', _teaPumpForwardTime);
+    await prefs.setDouble('teaPumpPendingForwardTime', 0.0);
     await _updateTeaUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -1018,7 +1018,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -1040,8 +1040,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    _milkPumpPendingForwardTime = 0.0;
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -1081,7 +1081,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
-    final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
+    final teaOnTimeWithForward = (ttpOnTime + _teaPumpPendingForwardTime).toInt();
     print(
       "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
     );
@@ -1098,9 +1098,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
     await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
 
-    _teaPumpForwardTime = ttpOnTime.toDouble();
+    _teaPumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('teaPumpForwardTime', _teaPumpForwardTime);
+    await prefs.setDouble('teaPumpPendingForwardTime', 0.0);
     await _updateTeaUsageTime();
 
     print("Waiting milkDelay: $milkDelay seconds");
@@ -1108,7 +1108,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -1130,8 +1130,8 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    _milkPumpPendingForwardTime = 0.0;
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -1169,7 +1169,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("ttpDelay complete");
 
-    final teaOnTimeWithForward = (ttpOnTime + _teaPumpForwardTime).toInt();
+    final teaOnTimeWithForward = (ttpOnTime + _teaPumpPendingForwardTime).toInt();
     print(
       "Sending Tea Pump ON with forward time: $teaOnTimeWithForward seconds",
     );
@@ -1186,9 +1186,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     print("Sending Tea Pump OFF: {TP_FWD: 0, TP_REV: 0}");
     await bloc.serialService.sendJsonData({"TP_FWD": "0", "TP_REV": "0"});
 
-    _teaPumpForwardTime = ttpOnTime.toDouble();
+    _teaPumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('teaPumpForwardTime', _teaPumpForwardTime);
+    await prefs.setDouble('teaPumpPendingForwardTime', 0.0);
     await _updateTeaUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -1242,7 +1242,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -1264,9 +1264,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
+    _milkPumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Dip Tea Sequence Complete");
@@ -1288,7 +1288,7 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     if (!bloc.isBrewAnimating) return;
     print("milkDelay complete");
 
-    final milkOnTimeWithForward = (milkOnTime + _milkPumpForwardTime).toInt();
+    final milkOnTimeWithForward = (milkOnTime + _milkPumpPendingForwardTime).toInt();
     print(
       "Sending Milk Pump ON with forward time: $milkOnTimeWithForward seconds",
     );
@@ -1310,9 +1310,9 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
       "MP_REV": "0",
     });
 
-    _milkPumpForwardTime = milkOnTime.toDouble();
+    _milkPumpPendingForwardTime = 0.0;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('milkPumpForwardTime', _milkPumpForwardTime);
+    await prefs.setDouble('milkPumpPendingForwardTime', 0.0);
     await _updateMilkUsageTime();
 
     print("Waiting waterDelay: $waterDelay seconds");
@@ -1412,14 +1412,17 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     int brewSeconds = _calculateBrewTime(drinkKey);
 
     if (drinkKey == 'strongCoffee' || drinkKey == 'liteCoffee' || drinkKey == 'blackCoffee') {
-      brewSeconds += _coffeePumpForwardTime.toInt();
+      brewSeconds += _coffeePumpPendingForwardTime.toInt();
     }
     if (drinkKey == 'strongTea' || drinkKey == 'liteTea' || drinkKey == 'blackTea') {
-      brewSeconds += _teaPumpForwardTime.toInt();
+      brewSeconds += _teaPumpPendingForwardTime.toInt();
     }
     if (drinkKey == 'strongCoffee' || drinkKey == 'liteCoffee' || drinkKey == 'strongTea' || drinkKey == 'liteTea' || drinkKey == 'dipTea' || drinkKey == 'hotMilk') {
-      brewSeconds += _milkPumpForwardTime.toInt();
+      brewSeconds += _milkPumpPendingForwardTime.toInt();
     }
+
+    // Add padding to prevent the brew progress popup from closing too early and aborting trailing cleanup actions (like MHWV off)
+    brewSeconds += 3;
 
     print("Calculated brew time: $brewSeconds seconds");
 
@@ -1562,15 +1565,18 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
     _milkPumpDelay = prefs.getDouble('milkPumpDelay') ?? 0.0;
     _milkPumpOnTime = prefs.getDouble('milkPumpOnTime') ?? 0.0;
     _milkPumpForwardTime = prefs.getDouble('milkPumpForwardTime') ?? 0.0;
+    _milkPumpPendingForwardTime = prefs.getDouble('milkPumpPendingForwardTime') ?? 0.0;
     _lastMilkUsedTime = prefs.getInt('lastMilkUsedTime');
 
     _teaPumpDelay = prefs.getDouble('teaPumpDelay') ?? 0.0;
     _teaPumpOnTime = prefs.getDouble('teaPumpOnTime') ?? 0.0;
     _teaPumpForwardTime = prefs.getDouble('teaPumpForwardTime') ?? 0.0;
+    _teaPumpPendingForwardTime = prefs.getDouble('teaPumpPendingForwardTime') ?? 0.0;
 
     _coffeePumpDelay = prefs.getDouble('coffeePumpDelay') ?? 0.0;
     _coffeePumpOnTime = prefs.getDouble('coffeePumpOnTime') ?? 0.0;
     _coffeePumpForwardTime = prefs.getDouble('coffeePumpForwardTime') ?? 0.0;
+    _coffeePumpPendingForwardTime = prefs.getDouble('coffeePumpPendingForwardTime') ?? 0.0;
 
     print(
       "strongCoffee cpDelay = ${bloc.delaySettings['strongCoffee']?['cpDelay']}",

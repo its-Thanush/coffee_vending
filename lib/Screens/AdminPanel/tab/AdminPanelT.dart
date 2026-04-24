@@ -3274,6 +3274,8 @@ class _AdminpanelState extends State<Adminpanel>
                         "MP_FWD": "0",
                         "MP_REV": "0",
                       });
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setDouble('milkPumpPendingForwardTime', _milkPumpForwardTime);
                       _showSnackBar(
                         'Milk Pump Reversed for ${_milkPumpOnTime.toInt()} sec',
                       );
@@ -3305,6 +3307,8 @@ class _AdminpanelState extends State<Adminpanel>
                         "TP_FWD": "0",
                         "TP_REV": "0",
                       });
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setDouble('teaPumpPendingForwardTime', _teaPumpForwardTime);
                       _showSnackBar('Tea Pump Reverse for $_teaPumpOnTime sec');
                       print('Tea Pump Reverse triggered');
                     },
@@ -3335,6 +3339,8 @@ class _AdminpanelState extends State<Adminpanel>
                         "CP_FWD": "0",
                         "CP_REV": "0",
                       });
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setDouble('coffeePumpPendingForwardTime', _coffeePumpForwardTime);
                       _showSnackBar(
                         'Coffee Pump Reverse for $_coffeePumpOnTime sec',
                       );
