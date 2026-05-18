@@ -1,4 +1,4 @@
-import 'package:usb_serial/usb_serial.dart';
+import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
@@ -8,8 +8,11 @@ class SerialService {
   factory SerialService() => _instance;
   SerialService._internal();
 
-  UsbPort? _port;
+  Socket? _socket;
   bool isConnected = false;
+
+  final String serverIp = '192.168.4.1';
+  final int serverPort = 8080;
 
   final List<Function(bool)> _connectionListeners = [];
   final List<Function(String)> _tempListeners = [];
@@ -45,7 +48,6 @@ class SerialService {
     _floatListeners.remove(listener);
   }
 
-  // Deprecated single-callbacks for backward compatibility during transition if any
   Function(bool)? onConnectionChanged;
   Function(String)? onTempReceived;
   Function(String)? onFloatReceived;
@@ -55,46 +57,13 @@ class SerialService {
 
   Future<bool> connect() async {
     try {
-      List<UsbDevice> devices = await UsbSerial.listDevices();
-
-      if (devices.isEmpty) {
-        print("No devices found");
-        isConnected = false;
-        onConnectionChanged?.call(false);
-        return false;
-      }
-
-      print("Found ${devices.length} device(s)");
-
-      _port = await devices[0].create();
-
-      if (_port == null) {
-        print("Failed to create port");
-        isConnected = false;
-        onConnectionChanged?.call(false);
-        return false;
-      }
-
-      bool openResult = await _port!.open();
-
-      if (!openResult) {
-        print("Failed to open port");
-        isConnected = false;
-        onConnectionChanged?.call(false);
-        return false;
-      }
-
-      await _port!.setDTR(true);
-      await _port!.setRTS(true);
-      await _port!.setPortParameters(
-        115200,
-        UsbPort.DATABITS_8,
-        UsbPort.STOPBITS_1,
-        UsbPort.PARITY_NONE,
+      _socket = await Socket.connect(
+        serverIp,
+        serverPort,
+        timeout: const Duration(seconds: 5),
       );
 
       print("Connected successfully!");
-      await Future.delayed(Duration(milliseconds: 500));
 
       _startListening();
 
@@ -110,27 +79,40 @@ class SerialService {
   }
 
   void _startListening() {
-    _subscription = _port!.inputStream?.listen((Uint8List data) {
-      _buffer += String.fromCharCodes(data);
+    _subscription = _socket!.listen(
+      (Uint8List data) {
+        _buffer += String.fromCharCodes(data);
 
-      int newlineIndex;
-      while ((newlineIndex = _buffer.indexOf('\n')) != -1) {
-        String line = _buffer.substring(0, newlineIndex).trim();
-        _buffer = _buffer.substring(newlineIndex + 1);
+        int newlineIndex;
+        while ((newlineIndex = _buffer.indexOf('\n')) != -1) {
+          String line = _buffer.substring(0, newlineIndex).trim();
+          _buffer = _buffer.substring(newlineIndex + 1);
 
-        if (line.isNotEmpty) {
-          _processReceivedData(line);
+          if (line.isNotEmpty) {
+            _processReceivedData(line);
+          }
         }
-      }
-    });
+      },
+      onError: (error) {
+        print("Socket error: $error");
+        disconnect();
+      },
+      onDone: () {
+        print("Socket done");
+        disconnect();
+      },
+    );
   }
 
   void _processReceivedData(String data) {
-    print("-------json Data---->"+data);
+    print("-------json Data---->" + data);
     try {
       final jsonData = json.decode(data);
       if (jsonData['TEMP'] != null) {
-        print("--------------TEmp---Receiving--------->"+jsonData['TEMP'].toString());
+        print(
+          "--------------TEmp---Receiving--------->" +
+              jsonData['TEMP'].toString(),
+        );
         onTempReceived?.call(jsonData['TEMP']);
         for (var listener in _tempListeners) {
           listener(jsonData['TEMP']);
@@ -148,14 +130,14 @@ class SerialService {
   }
 
   Future<void> sendData(String data) async {
-    if (_port == null) {
+    if (_socket == null) {
       print("Port not connected");
       return;
     }
 
     try {
       String message = data + '\n';
-      await _port!.write(Uint8List.fromList(message.codeUnits));
+      _socket!.write(message);
       print("Sent: $message");
     } catch (e) {
       print("Error sending data: $e");
@@ -165,7 +147,7 @@ class SerialService {
   }
 
   Future<void> sendJsonData(Map<String, dynamic> data) async {
-    if (_port == null) {
+    if (_socket == null) {
       print("Port not connected");
       return;
     }
@@ -173,7 +155,7 @@ class SerialService {
     try {
       String jsonString = json.encode(data);
       jsonString += '\n';
-      await _port!.write(Uint8List.fromList(jsonString.codeUnits));
+      _socket!.write(jsonString);
       print("Sent: $jsonString");
     } catch (e) {
       print("Error sending data: $e");
@@ -184,9 +166,7 @@ class SerialService {
 
   Future<bool> checkConnection() async {
     try {
-      List<UsbDevice> devices = await UsbSerial.listDevices();
-
-      if (devices.isEmpty || _port == null) {
+      if (_socket == null) {
         if (isConnected) {
           isConnected = false;
           onConnectionChanged?.call(false);
@@ -212,8 +192,8 @@ class SerialService {
   Future<void> disconnect() async {
     try {
       await _subscription?.cancel();
-      await _port?.close();
-      _port = null;
+      _socket?.destroy();
+      _socket = null;
       isConnected = false;
       onConnectionChanged?.call(false);
       for (var listener in _connectionListeners) {
