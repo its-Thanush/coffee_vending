@@ -522,7 +522,7 @@ class _AdminpanelState extends State<Adminpanel>
         'waterOnTime': prefs.getInt('strongCoffee_waterOnTime') ?? 0,
       };
 
-      _delaySettings['liteCoffee'] = {
+      _delaySettings['liteCoffee'] ={
         'cpDelay': prefs.getInt('liteCoffee_cpDelay') ?? 0,
         'cpOnTime': prefs.getInt('liteCoffee_cpOnTime') ?? 0,
         'milkDelay': prefs.getInt('liteCoffee_milkDelay') ?? 0,
