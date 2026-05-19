@@ -55,27 +55,62 @@ class SerialService {
   StreamSubscription<Uint8List>? _subscription;
   String _buffer = '';
 
+  // Future<bool> connect() async {
+  //   try {
+  //     _socket = await Socket.connect(
+  //       serverIp,
+  //       serverPort,
+  //       timeout: const Duration(seconds: 5),
+  //     );
+  //
+  //     print("Connected successfully!");
+  //
+  //     _startListening();
+  //
+  //     isConnected = true;
+  //     onConnectionChanged?.call(true);
+  //     return true;
+  //   } catch (e) {
+  //     print("Connection error: $e");
+  //     isConnected = false;
+  //     onConnectionChanged?.call(false);
+  //     return false;
+  //   }
+  // }
+
+
   Future<bool> connect() async {
-    try {
-      _socket = await Socket.connect(
-        serverIp,
-        serverPort,
-        timeout: const Duration(seconds: 5),
-      );
+    int retry = 0;
 
-      print("Connected successfully!");
+    while (retry < 10) {
+      try {
+        print("Trying to connect... Attempt $retry");
 
-      _startListening();
+        _socket = await Socket.connect(
+          serverIp,
+          serverPort,
+          timeout: const Duration(seconds: 3),
+        );
 
-      isConnected = true;
-      onConnectionChanged?.call(true);
-      return true;
-    } catch (e) {
-      print("Connection error: $e");
-      isConnected = false;
-      onConnectionChanged?.call(false);
-      return false;
+        print("Connected successfully!");
+
+        _startListening();
+
+        isConnected = true;
+        onConnectionChanged?.call(true);
+        return true;
+      } catch (e) {
+        print("Connection failed: $e");
+
+        retry++;
+        await Future.delayed(Duration(seconds: 2));
+      }
     }
+
+    print("Final: Unable to connect");
+    isConnected = false;
+    onConnectionChanged?.call(false);
+    return false;
   }
 
   void _startListening() {
@@ -108,9 +143,15 @@ class SerialService {
     print("-------json Data---->" + data);
     try {
       final jsonData = json.decode(data);
+
+      // ✅ NEW: HANDLE RESULT FROM ESP32
+      if (jsonData['RESULT'] != null) {
+        print("RESULT RECEIVED: ${jsonData['RESULT']}");
+      }
+
       if (jsonData['TEMP'] != null) {
         print(
-          "--------------TEmp---Receiving--------->" +
+          "--------------Temp Receiving--------->" +
               jsonData['TEMP'].toString(),
         );
         onTempReceived?.call(jsonData['TEMP']);
@@ -118,7 +159,12 @@ class SerialService {
           listener(jsonData['TEMP']);
         }
       }
+
       if (jsonData['FLOAT'] != null) {
+        print(
+          "--------------Float Receiving--------->" +
+              jsonData['FLOAT'].toString(),
+        );
         onFloatReceived?.call(jsonData['FLOAT']);
         for (var listener in _floatListeners) {
           listener(jsonData['FLOAT']);
@@ -128,6 +174,31 @@ class SerialService {
       print("Error parsing JSON: $e");
     }
   }
+
+  // void _processReceivedData(String data) {
+  //   print("-------json Data---->" + data);
+  //   try {
+  //     final jsonData = json.decode(data);
+  //     if (jsonData['TEMP'] != null) {
+  //       print(
+  //         "--------------TEmp---Receiving--------->" +
+  //             jsonData['TEMP'].toString(),
+  //       );
+  //       onTempReceived?.call(jsonData['TEMP']);
+  //       for (var listener in _tempListeners) {
+  //         listener(jsonData['TEMP']);
+  //       }
+  //     }
+  //     if (jsonData['FLOAT'] != null) {
+  //       onFloatReceived?.call(jsonData['FLOAT']);
+  //       for (var listener in _floatListeners) {
+  //         listener(jsonData['FLOAT']);
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print("Error parsing JSON: $e");
+  //   }
+  // }
 
   Future<void> sendData(String data) async {
     if (_socket == null) {
