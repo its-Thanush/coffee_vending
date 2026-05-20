@@ -80,16 +80,16 @@ class SerialService {
 
 
   Future<bool> connect() async {
-    int retry = 0;
+    int retry = 1;
 
-    while (retry < 10) {
+    while (retry <= 10) {
       try {
         print("Trying to connect... Attempt $retry");
 
         _socket = await Socket.connect(
           serverIp,
           serverPort,
-          timeout: const Duration(seconds: 3),
+          timeout: const Duration(seconds: 5),
         );
 
         print("Connected successfully!");
@@ -98,18 +98,26 @@ class SerialService {
 
         isConnected = true;
         onConnectionChanged?.call(true);
+        for (var listener in _connectionListeners) {
+          listener(true);
+        }
         return true;
       } catch (e) {
         print("Connection failed: $e");
 
         retry++;
-        await Future.delayed(Duration(seconds: 2));
+        if (retry <= 10) {
+          await Future.delayed(const Duration(seconds: 2));
+        }
       }
     }
 
     print("Final: Unable to connect");
     isConnected = false;
     onConnectionChanged?.call(false);
+    for (var listener in _connectionListeners) {
+      listener(false);
+    }
     return false;
   }
 
@@ -154,9 +162,9 @@ class SerialService {
           "--------------Temp Receiving--------->" +
               jsonData['TEMP'].toString(),
         );
-        onTempReceived?.call(jsonData['TEMP']);
+        onTempReceived?.call(jsonData['TEMP'].toString());
         for (var listener in _tempListeners) {
-          listener(jsonData['TEMP']);
+          listener(jsonData['TEMP'].toString());
         }
       }
 
@@ -165,9 +173,9 @@ class SerialService {
           "--------------Float Receiving--------->" +
               jsonData['FLOAT'].toString(),
         );
-        onFloatReceived?.call(jsonData['FLOAT']);
+        onFloatReceived?.call(jsonData['FLOAT'].toString());
         for (var listener in _floatListeners) {
-          listener(jsonData['FLOAT']);
+          listener(jsonData['FLOAT'].toString());
         }
       }
     } catch (e) {
@@ -214,6 +222,9 @@ class SerialService {
       print("Error sending data: $e");
       isConnected = false;
       onConnectionChanged?.call(false);
+      for (var listener in _connectionListeners) {
+        listener(false);
+      }
     }
   }
 
@@ -232,6 +243,9 @@ class SerialService {
       print("Error sending data: $e");
       isConnected = false;
       onConnectionChanged?.call(false);
+      for (var listener in _connectionListeners) {
+        listener(false);
+      }
     }
   }
 

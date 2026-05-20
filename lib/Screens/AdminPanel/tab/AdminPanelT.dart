@@ -1449,7 +1449,7 @@ class _AdminpanelState extends State<Adminpanel>
                 ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(
-                    RegExp(r'^\d{0,2}\.?\d{0,1}'),
+                    RegExp(r'^\d{0,3}\.?\d{0,1}'),
                   ),
                 ],
                 decoration: InputDecoration(
@@ -1471,7 +1471,7 @@ class _AdminpanelState extends State<Adminpanel>
               ),
               const SizedBox(height: 8),
               Text(
-                'Max 99.9 seconds',
+                'Max 999.9 seconds',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
@@ -1494,14 +1494,14 @@ class _AdminpanelState extends State<Adminpanel>
                       double? newValue = double.tryParse(controller.text);
                       if (newValue != null &&
                           newValue >= 0 &&
-                          newValue <= 99.9) {
+                          newValue <= 999.9) {
                         onSet(newValue);
                         Navigator.pop(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'Please enter a valid value (0 - 99.9)',
+                              'Please enter a valid value (0 - 999.9)',
                             ),
                             backgroundColor: Colors.red,
                           ),
@@ -1613,7 +1613,7 @@ class _AdminpanelState extends State<Adminpanel>
               ),
               const SizedBox(height: 8),
               Text(
-                '(Max 99.9 seconds)',
+                '(Max 999.9 seconds)',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
@@ -1636,7 +1636,7 @@ class _AdminpanelState extends State<Adminpanel>
                       double? newValue = double.tryParse(controller.text);
                       if (newValue != null &&
                           newValue >= 0 &&
-                          newValue <= 99.9) {
+                          newValue <= 999.9) {
                         onSet(newValue);
                         Navigator.pop(context);
                       } else {

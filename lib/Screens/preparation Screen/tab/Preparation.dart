@@ -53,17 +53,21 @@ class _PreparationState extends State<Preparation> {
     });
     serialService.onTempReceived = (String temp) {
       print("=========Receving temp ========>"+temp);
-      setState(() {
-        _currentTempString = temp;
-        _currentTemp = double.tryParse(temp) ?? 0.0;
-      });
+      if (mounted) {
+        setState(() {
+          _currentTempString = temp;
+          _currentTemp = double.tryParse(temp) ?? 0.0;
+        });
+      }
     };
     serialService.onFloatReceived = (String floatValue) {
       print("=========Receving FLOAT ========>"+floatValue.toString());
-      setState(() {
-        _floatLevel = floatValue;
-        _showWaterWarning = floatValue == "1";
-      });
+      if (mounted) {
+        setState(() {
+          _floatLevel = floatValue;
+          _showWaterWarning = floatValue == "1";
+        });
+      }
       if (floatValue == "0") {
         print("---------------------heater ON --------------------------");
         _startTemperatureCheck();
@@ -73,9 +77,11 @@ class _PreparationState extends State<Preparation> {
     _initNodeMCUConnection();
 
     serialService.onConnectionChanged = (bool status) {
-      setState(() {
-        isNodeMCUOnline = status;
-      });
+      if (mounted) {
+        setState(() {
+          isNodeMCUOnline = status;
+        });
+      }
     };
 
     // serialService.onTempReceived = (String temp) {
@@ -93,17 +99,21 @@ class _PreparationState extends State<Preparation> {
 
   Future<void> _initNodeMCUConnection() async {
     bool connected = await serialService.connect();
-    setState(() {
-      isNodeMCUOnline = connected;
-    });
+    if (mounted) {
+      setState(() {
+        isNodeMCUOnline = connected;
+      });
+    }
   }
 
   Future<void> _checkNodeMCUConnection() async {
     bool connected = await serialService.checkConnection();
     if (connected != isNodeMCUOnline) {
-      setState(() {
-        isNodeMCUOnline = connected;
-      });
+      if (mounted) {
+        setState(() {
+          isNodeMCUOnline = connected;
+        });
+      }
     }
   }
 
@@ -111,10 +121,12 @@ class _PreparationState extends State<Preparation> {
   void _startTempTimeout() {
     _tempTimeoutTimer?.cancel();
     _tempTimeoutTimer = Timer(const Duration(seconds: 30), () {
-      setState(() {
-        _tempError = true;
-        _currentTemp = 0.0;
-      });
+      if (mounted) {
+        setState(() {
+          _tempError = true;
+          _currentTemp = 0.0;
+        });
+      }
     });
   }
 
@@ -125,16 +137,19 @@ class _PreparationState extends State<Preparation> {
     final prefs = await SharedPreferences.getInstance();
     double coffeeTemp = prefs.getDouble('coffeeTemp') ?? 0.0;
     double teaTemp = prefs.getDouble('teaTemp') ?? 0.0;
-    setState(() {
-      _targetTemp = coffeeTemp > teaTemp ? coffeeTemp : teaTemp;
-    });
+    if (mounted) {
+      setState(() {
+        _targetTemp = coffeeTemp > teaTemp ? coffeeTemp : teaTemp;
+      });
+    }
   }
 
   void _startTemperatureCheck() {
     serialService.onTempReceived = (String temp) {
-      setState(() {
-        _currentTempString = temp;
-        _currentTemp = double.tryParse(temp) ?? 0.0;
+      if (mounted) {
+        setState(() {
+          _currentTempString = temp;
+          _currentTemp = double.tryParse(temp) ?? 0.0;
 
         if (_floatLevel == "0" && _targetTemp > 0) {
           _currentProgress = (_currentTemp / _targetTemp).clamp(0.0, 1.0);
@@ -158,6 +173,7 @@ class _PreparationState extends State<Preparation> {
           }
         }
       });
+      }
     };
   }
 
