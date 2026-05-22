@@ -98,12 +98,6 @@ class _ScreenSaverState extends State<ScreenSaver> {
   }
 
   void _tempListener(String temp) {
-    double currentT = double.tryParse(temp) ?? 0.0;
-    if (currentT > _targetTemp) {
-      serialService.sendJsonData({"SETTEMP": "0"});
-    } else {
-      serialService.sendJsonData({"SETTEMP": _targetTemp});
-    }
   }
 
   void _floatListener(String float) {

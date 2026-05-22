@@ -256,13 +256,6 @@ class _AdminpanelState extends State<Adminpanel>
       });
       _resetTempTimeout();
     }
-
-    double currentT = double.tryParse(temp) ?? 0.0;
-    if (currentT > _targetTemp) {
-      serialService.sendJsonData({"SETTEMP": "0"});
-    } else {
-      serialService.sendJsonData({"SETTEMP": _targetTemp});
-    }
   }
 
   void _floatListener(String float) {
@@ -276,7 +269,6 @@ class _AdminpanelState extends State<Adminpanel>
     } else if (float == "0") {
       _floatWarningTimer?.cancel();
       _floatWarningTimer = null;
-
       serialService.sendJsonData({"SETTEMP": _targetTemp});
     }
   }

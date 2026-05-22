@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
+import 'package:wifi_iot/wifi_iot.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SerialService {
   static final SerialService _instance = SerialService._internal();
@@ -10,6 +12,12 @@ class SerialService {
 
   Socket? _socket;
   bool isConnected = false;
+  Timer? _requestTimer;
+  bool _waitingForResponse = false;
+  DateTime? _lastRequestTime;
+  bool _isConnecting = false;
+  Future<bool>? _connectFuture;
+  dynamic _lastSentSetTemp;
 
   final String serverIp = '192.168.4.1';
   final int serverPort = 8080;
@@ -55,36 +63,72 @@ class SerialService {
   StreamSubscription<Uint8List>? _subscription;
   String _buffer = '';
 
-  // Future<bool> connect() async {
-  //   try {
-  //     _socket = await Socket.connect(
-  //       serverIp,
-  //       serverPort,
-  //       timeout: const Duration(seconds: 5),
-  //     );
-  //
-  //     print("Connected successfully!");
-  //
-  //     _startListening();
-  //
-  //     isConnected = true;
-  //     onConnectionChanged?.call(true);
-  //     return true;
-  //   } catch (e) {
-  //     print("Connection error: $e");
-  //     isConnected = false;
-  //     onConnectionChanged?.call(false);
-  //     return false;
-  //   }
-  // }
-
-
   Future<bool> connect() async {
+    if (isConnected && _socket != null) {
+      return true;
+    }
+    if (_isConnecting) {
+      return _connectFuture ?? Future.value(false);
+    }
+    _isConnecting = true;
+    final completer = Completer<bool>();
+    _connectFuture = completer.future;
+
+    try {
+      bool result = await _connectInternal();
+      completer.complete(result);
+      return result;
+    } catch (e) {
+      completer.complete(false);
+      return false;
+    } finally {
+      _isConnecting = false;
+      _connectFuture = null;
+    }
+  }
+
+  Future<bool> _connectInternal() async {
     int retry = 1;
 
     while (retry <= 10) {
       try {
         print("Trying to connect... Attempt $retry");
+
+        bool wifiConnected = true;
+        if (Platform.isAndroid || Platform.isIOS) {
+          String? currentSsid = await WiFiForIoTPlugin.getSSID();
+          if (currentSsid != null) {
+            if (currentSsid.startsWith('"') && currentSsid.endsWith('"')) {
+              currentSsid = currentSsid.substring(1, currentSsid.length - 1);
+            }
+          }
+
+          if (currentSsid != "Atlanwa_coffee") {
+            if (Platform.isAndroid) {
+              await Permission.location.request();
+              await Permission.nearbyWifiDevices.request();
+            }
+
+            wifiConnected = await WiFiForIoTPlugin.connect(
+              "Atlanwa_coffee",
+              password: "12345678",
+              security: NetworkSecurity.WPA,
+              joinOnce: false,
+              withInternet: false,
+            );
+          } else {
+            wifiConnected = true;
+          }
+
+          if (wifiConnected) {
+            await WiFiForIoTPlugin.forceWifiUsage(true);
+            await Future.delayed(const Duration(seconds: 1));
+          }
+        }
+
+        if (!wifiConnected) {
+          throw Exception("WiFi connection failed");
+        }
 
         _socket = await Socket.connect(
           serverIp,
@@ -101,6 +145,7 @@ class SerialService {
         for (var listener in _connectionListeners) {
           listener(true);
         }
+        _startRequestTimer();
         return true;
       } catch (e) {
         print("Connection failed: $e");
@@ -151,6 +196,9 @@ class SerialService {
     print("-------json Data---->" + data);
     try {
       final jsonData = json.decode(data);
+      if (jsonData['TEMP'] != null || jsonData['FLOAT'] != null) {
+        _waitingForResponse = false;
+      }
 
       // ✅ NEW: HANDLE RESULT FROM ESP32
       if (jsonData['RESULT'] != null) {
@@ -234,6 +282,14 @@ class SerialService {
       return;
     }
 
+    if (data.containsKey("SETTEMP")) {
+      final newTemp = data["SETTEMP"];
+      if (_lastSentSetTemp != null && _lastSentSetTemp.toString() == newTemp.toString()) {
+        return;
+      }
+      _lastSentSetTemp = newTemp;
+    }
+
     try {
       String jsonString = json.encode(data);
       jsonString += '\n';
@@ -276,6 +332,11 @@ class SerialService {
 
   Future<void> disconnect() async {
     try {
+      _stopRequestTimer();
+      _lastSentSetTemp = null;
+      if (Platform.isAndroid || Platform.isIOS) {
+        await WiFiForIoTPlugin.forceWifiUsage(false);
+      }
       await _subscription?.cancel();
       _socket?.destroy();
       _socket = null;
@@ -287,6 +348,38 @@ class SerialService {
       print("Disconnected");
     } catch (e) {
       print("Error disconnecting: $e");
+    }
+  }
+
+  void _startRequestTimer() {
+    _requestTimer?.cancel();
+    _waitingForResponse = false;
+    _sendRequest();
+    _requestTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _sendRequest();
+    });
+  }
+
+  void _stopRequestTimer() {
+    _requestTimer?.cancel();
+    _requestTimer = null;
+    _waitingForResponse = false;
+  }
+
+  void _sendRequest() {
+    if (isConnected) {
+      if (!_waitingForResponse) {
+        _waitingForResponse = true;
+        _lastRequestTime = DateTime.now();
+        sendJsonData({"REQ": "SEND"});
+      } else {
+        if (_lastRequestTime != null &&
+            DateTime.now().difference(_lastRequestTime!).inSeconds >= 3) {
+          _waitingForResponse = true;
+          _lastRequestTime = DateTime.now();
+          sendJsonData({"REQ": "SEND"});
+        }
+      }
     }
   }
 }

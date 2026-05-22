@@ -112,13 +112,6 @@ class _VendingMachineScreenState extends State<VendingMachineScreen> {
         });
         _resetTempTimeout();
       }
-
-      double currentT = double.tryParse(temp) ?? 0.0;
-      if (currentT > _targetTemp) {
-        bloc.serialService.sendJsonData({"SETTEMP": "0"});
-      } else {
-        bloc.serialService.sendJsonData({"SETTEMP": _targetTemp});
-      }
     });
 
     bloc.serialService.addFloatListener((String float) {
