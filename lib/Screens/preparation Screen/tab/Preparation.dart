@@ -155,7 +155,7 @@ class _PreparationState extends State<Preparation> {
           _currentProgress = (_currentTemp / _targetTemp).clamp(0.0, 1.0);
 
           if (_currentProgress < 0.3) {
-            _statusText = 'Heating brewing systems...';
+            _statusText = 'Heating brewing system...';
           } else if (_currentProgress < 0.6) {
             _statusText = 'Optimizing temperature...';
           } else if (_currentProgress < 0.9) {
