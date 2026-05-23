@@ -292,7 +292,7 @@ class SerialService {
 
     try {
       String jsonString = json.encode(data);
-      jsonString += '\n';
+      //jsonString += '\n';
       _socket!.write(jsonString);
       print("Sent: $jsonString");
     } catch (e) {

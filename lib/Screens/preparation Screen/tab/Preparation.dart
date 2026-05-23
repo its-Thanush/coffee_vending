@@ -77,6 +77,7 @@ class _PreparationState extends State<Preparation> {
     _initNodeMCUConnection();
 
     serialService.onConnectionChanged = (bool status) {
+      print(status ? "Connected" : "Disconnected");
       if (mounted) {
         setState(() {
           isNodeMCUOnline = status;
@@ -108,7 +109,9 @@ class _PreparationState extends State<Preparation> {
 
   Future<void> _checkNodeMCUConnection() async {
     bool connected = await serialService.checkConnection();
-    if (connected != isNodeMCUOnline) {
+    if (!connected) {
+      await _initNodeMCUConnection();
+    } else if (connected != isNodeMCUOnline) {
       if (mounted) {
         setState(() {
           isNodeMCUOnline = connected;
